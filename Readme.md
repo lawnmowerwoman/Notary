@@ -180,7 +180,7 @@ Wichtig für Beta-Tester:
 Die visuelle Richtung für Notary ist aktuell in zwei Referenzen festgehalten:
 
 - [Design-Styleguide](/Users/steffi/Coding/Notary/Dokumentation/Design-Styleguide.md)
-- [App-Icon-Konzept](/Users/steffi/Coding/Notary/Dokumentation/Notary-App-Icon-Concept.svg)
+- [App-Icon-Konzept](Dokumentation/Notary-App-Icon-Concept.svg)
 - [Packaging-Plan](/Users/steffi/Coding/Notary/Dokumentation/Packaging-Plan.md)
 
 Diese Dateien definieren den derzeit bekannten Zielcharakter für GUI, Materialität, Informationshierarchie und das Motiv `Proof im Shield`.
