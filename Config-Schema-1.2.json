@@ -1,0 +1,908 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "de.twocent.notary",
+  "title": "Twocent Labs Notary – Apfelwerk Konfiguration 1.3",
+  "description": "CIS/BSI-nahe Härtungs- und Reporting-Optionen für den Runner.",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "Org": {
+      "type": "object",
+      "title": "Organisation",
+      "propertyOrder": 10,
+      "options": { "collapsed": false },
+      "additionalProperties": false,
+      "properties": {
+        "OrgName": { "type": "string", "title": "Organisationsname (Login-Meldung)" },
+        "OrgContact": { "type": "string", "title": "Kontakt (Mail/Telefon)" }
+      }
+    },
+
+    "CoreSecurity": {
+      "type": "object",
+      "title": "Core Security",
+      "propertyOrder": 20,
+      "options": { "collapsed": false },
+      "additionalProperties": false,
+      "required": ["UpdateXProtect"],
+      "properties": {
+        "UpdateXProtect": {
+          "type": "string",
+          "default": "check",
+          "title": "XProtect automatisches Update",
+          "enum": ["hard-enforce", "enforce", "off", "check", "hard-check"],
+          "options": {
+            "enum_titles": ["Erzwingen (Hard fail)", "Erzwingen (Best Effort)", "Ignorieren", "Prüfen (Informativ)", "Prüfen (Kritisch)"]
+          }
+        },
+        "CheckFileVaultStatus": {
+          "type": "string",
+          "default": "check",
+          "title": "2.5.1.1 FileVault aktiv",
+          "enum": ["hard-check", "check", "off"],
+          "options": {
+            "enum_titles": ["Prüfen (Kritisch)", "Prüfen (Informativ)", "Ignorieren"]
+          }
+        },
+        "CheckGateKeeperStatus": {
+          "type": "string",
+          "default": "check",
+          "title": "2.5.2.1 Gatekeeper aktiv ('Anywhere' versteckt)",
+          "enum": ["hard-check", "check", "off"],
+          "options": {
+            "enum_titles": ["Prüfen (Kritisch)", "Prüfen (Informativ)", "Ignorieren"]
+          }
+        },
+        "CheckSIPStatus": {
+          "type": "string",
+          "default": "check",
+          "title": "5.18 SIP aktiv",
+          "enum": ["hard-check", "check", "off"],
+          "options": {
+            "enum_titles": ["Prüfen (Kritisch)", "Prüfen (Informativ)", "Ignorieren"]
+          }
+        },
+        "CheckARStatus": {
+          "type": "string",
+          "default": "check",
+          "title": "5.19 SSV/Authenticated Root aktiv",
+          "enum": ["hard-check", "check", "off"],
+          "options": {
+            "enum_titles": ["Prüfen (Kritisch)", "Prüfen (Informativ)", "Ignorieren"]
+          }
+        }
+      }
+    },
+
+    "Firewall": {
+      "type": "object",
+      "title": "Firewall",
+      "propertyOrder": 30,
+      "options": { "collapsed": false },
+      "additionalProperties": false,
+      "properties": {
+        "EnableFirewall": {
+          "type": "string",
+          "default": "check",
+          "title": "2.5.2.1 macOS Firewall aktivieren",
+          "enum": ["hard-enforce", "enforce", "off", "check", "hard-check"],
+          "options": {
+            "enum_titles": ["Erzwingen (Hard fail)", "Erzwingen (Best Effort)", "Ignorieren", "Prüfen (Informativ)", "Prüfen (Kritisch)"]
+          }
+        },
+        "EnableFirewallStealthMode": {
+          "type": "string",
+          "default": "check",
+          "title": "2.5.2.3 Stealth Mode aktivieren",
+          "enum": ["hard-enforce", "enforce", "off", "check", "hard-check"],
+          "options": {
+            "enum_titles": ["Erzwingen (Hard fail)", "Erzwingen (Best Effort)", "Ignorieren", "Prüfen (Informativ)", "Prüfen (Kritisch)"]
+          }
+        },
+        "EnableFirewallBlockAllIncoming": {
+          "type": "string",
+          "default": "check",
+          "title": "Alle eingehenden Verbindungen blockieren",
+          "enum": ["hard-enforce", "enforce", "off", "check", "hard-check"],
+          "options": {
+            "enum_titles": ["Erzwingen (Hard fail)", "Erzwingen (Best Effort)", "Ignorieren", "Prüfen (Informativ)", "Prüfen (Kritisch)"]
+          }
+        },
+        "EnableFirewallAllowSigned": {
+          "type": "string",
+          "default": "check",
+          "title": "Signierte Verbindungen erlauben",
+          "enum": ["hard-enforce", "enforce", "off", "check", "hard-check"],
+          "options": {
+            "enum_titles": ["Erzwingen (Hard fail)", "Erzwingen (Best Effort)", "Ignorieren", "Prüfen (Informativ)", "Prüfen (Kritisch)"]
+          }
+        }
+      }
+    },
+
+    "DiagnosticsAudit": {
+      "type": "object",
+      "title": "Diagnose & Auditing",
+      "propertyOrder": 40,
+      "options": { "collapsed": false },
+      "additionalProperties": false,
+      "properties": {
+        "DisableDiagnosticData": {
+          "type": "string",
+          "default": "check",
+          "title": "2.5.5 Diagnose-/Nutzungsdaten an Apple deaktivieren",
+          "enum": ["hard-enforce", "enforce", "off", "check", "hard-check"],
+          "options": {
+            "enum_titles": ["Erzwingen (Hard fail)", "Erzwingen (Best Effort)", "Ignorieren", "Prüfen (Informativ)", "Prüfen (Kritisch)"]
+          }
+        },
+        "EnableSecurityAuditing": {
+          "type": "string",
+          "default": "check",
+          "title": "3.1 Security Auditing aktivieren",
+          "enum": ["hard-enforce", "enforce", "off", "check", "hard-check"],
+          "options": {
+            "enum_titles": ["Erzwingen (Hard fail)", "Erzwingen (Best Effort)", "Ignorieren", "Prüfen (Informativ)", "Prüfen (Kritisch)"]
+          }
+        },
+        "EnableAuditFailureHalt": {
+          "type": "string",
+          "default": "check",
+          "title": "Audit Failure-Halt (ahlt) aktivieren",
+          "description": "Prüft oder erzwingt, dass macOS bei einem Audit-Fehler in den Halt-Modus wechselt (`ahlt`). Das ist vor allem für strengere NIST- und CIS-Profile relevant, damit fehlgeschlagene Audit-Schreibvorgänge nicht unbemerkt bleiben.",
+          "enum": ["hard-enforce", "enforce", "off", "check", "hard-check"],
+          "options": {
+            "enum_titles": ["Erzwingen (Hard fail)", "Erzwingen (Best Effort)", "Ignorieren", "Prüfen (Informativ)", "Prüfen (Kritisch)"]
+          }
+        },
+        "ConfigureAuditFlagsCore": {
+          "type": "string",
+          "default": "check",
+          "title": "Audit Kern-Flags konfigurieren",
+          "description": "Prüft oder setzt den empfohlenen Kernsatz an Audit-Flags in `/etc/security/audit_control`. Damit werden sicherheitsrelevante Ereignisse wie Admin-Aktionen, Login-/Logout-Aktivitäten und Dateisystem-Fehler konsistent protokolliert.",
+          "enum": ["hard-enforce", "enforce", "off", "check", "hard-check"],
+          "options": {
+            "enum_titles": ["Erzwingen (Hard fail)", "Erzwingen (Best Effort)", "Ignorieren", "Prüfen (Informativ)", "Prüfen (Kritisch)"]
+          }
+        },
+        "RetainInstallLog": {
+          "type": "string",
+          "default": "check",
+          "title": "3.3 Retain install.log for 365 days",
+          "enum": ["hard-enforce", "enforce", "off", "check", "hard-check"],
+          "options": {
+            "enum_titles": ["Erzwingen (Hard fail)", "Erzwingen (Best Effort)", "Ignorieren", "Prüfen (Informativ)", "Prüfen (Kritisch)"]
+          }
+        },
+        "LimitAuditRecordsAccess": {
+          "type": "string",
+          "default": "check",
+          "title": "3.5 Zugriff auf Audit-Records (nur root)",
+          "enum": ["hard-enforce", "enforce", "off", "check", "hard-check"],
+          "options": {
+            "enum_titles": ["Erzwingen (Hard fail)", "Erzwingen (Best Effort)", "Ignorieren", "Prüfen (Informativ)", "Prüfen (Kritisch)"]
+          }
+        }
+      }
+    },
+
+    "Location": {
+      "type": "object",
+      "title": "Ortungsdienste",
+      "propertyOrder": 50,
+      "options": { "collapsed": false },
+      "additionalProperties": false,
+      "properties": {
+        "EnableLocationServices": {
+          "type": "string",
+          "default": "check",
+          "title": "2.5.3 Location Services aktivieren",
+          "enum": ["hard-enforce", "enforce", "off", "check", "hard-check"],
+          "options": {
+            "enum_titles": ["Erzwingen (Hard fail)", "Erzwingen (Best Effort)", "Ignorieren", "Prüfen (Informativ)", "Prüfen (Kritisch)"]
+          }
+        }
+      }
+    },
+
+    "ScreenSaver": {
+      "type": "object",
+      "title": "Bildschirmschoner",
+      "propertyOrder": 60,
+      "options": { "collapsed": false },
+      "additionalProperties": false,
+      "properties": {
+        "SetScreenSaverDelay": {
+          "type": "string",
+          "default": "check",
+          "title": "2.3.1 Inaktivitäts-Timeout erzwingen",
+          "enum": ["hard-enforce", "enforce", "off", "check", "hard-check"],
+          "options": {
+            "enum_titles": ["Erzwingen (Hard fail)", "Erzwingen (Best Effort)", "Ignorieren", "Prüfen (Informativ)", "Prüfen (Kritisch)"]
+          }
+        },
+        "ScreenSaverDelay": {
+          "type": "integer",
+          "default": 1200,
+          "title": "Inaktivitäts-Timeout",
+          "enum": [180, 300, 600, 1200],
+          "options": {
+            "enum_titles": ["3 Minuten", "5 Minuten", "10 Minuten", "20 Minuten"],
+            "hidden": false,
+            "show_if": { "SetScreenSaverDelay": "check" }
+          },
+          "watch": { "SetScreenSaverDelay": "root.ScreenSaver.SetScreenSaverDelay" }
+        },
+        "RequirePasswordOnWake": {
+          "type": "string",
+          "default": "off",
+          "title": "5.9 Passwort nach Sleep/Bildschirmschoner verlangen",
+          "enum": ["hard-check", "check", "off"],
+          "options": {
+            "enum_titles": ["Prüfen (Kritisch)", "Prüfen (Informativ)", "Ignorieren"],
+            "hidden": false,
+            "show_if": { "SetScreenSaverDelay": "check" }
+          }
+        },
+        "ScreenSaverPasswordDelay": {
+          "type": "integer",
+          "default": 5,
+          "title": "5.9.1 Passwort nach Bildschirmschoner oder Display Deaktivierung erforderlich",
+          "enum": [0, 5, 60, 300],
+          "options": {
+            "enum_titles": ["Sofort", "≤ 5 Sekunden", "≤ 1 Minute", "≤ 5 Minuten"],
+            "hidden": false,
+            "show_if": { "SetScreenSaverDelay": "check" }
+          },
+          "watch": { "SetScreenSaverDelay": "root.ScreenSaver.SetScreenSaverDelay" }
+        }
+      }
+    },
+
+    "TimeNTP": {
+      "type": "object",
+      "title": "Zeit & NTP",
+      "propertyOrder": 70,
+      "options": { "collapsed": false },
+      "additionalProperties": false,
+      "properties": {
+        "ForceTimeServer": { "type": "boolean", "default": false, "title": "2.2.1 NTP-Server/Zeitzone setzen" },
+        "TimeServer": {
+          "type": "string",
+          "default": "time.apple.com",
+          "title": "NTP-Server",
+          "options": {
+            "hidden": false,
+            "show_if": { "ForceTimeServer": true }
+          },
+          "watch": { "ForceTimeServer": "root.TimeNTP.ForceTimeServer" }
+        },
+        "DefaultTimeZone": {
+          "type": "string",
+          "default": "",
+          "title": "Zeitzone (z. B. Europe/Berlin)",
+          "options": {
+            "hidden": false,
+            "show_if": { "ForceTimeServer": true }
+          },
+          "watch": { "ForceTimeServer": "root.TimeNTP.ForceTimeServer" }
+        }
+      }
+    },
+
+    "System": {
+      "type": "object",
+      "title": "System",
+      "propertyOrder": 75,
+      "options": { "collapsed": false },
+      "additionalProperties": false,
+      "properties": {
+        "CheckSystemUptime": {
+          "type": "string",
+          "default": "check",
+          "title": "System-Laufzeit prüfen",
+          "description": "Überwacht die Laufzeit seit dem letzten Neustart. Überschreitet das Gerät den Warnwert, meldet Notary eine Reboot-Empfehlung; überschreitet es den Maximalwert, wird das als kritischer Befund gewertet.",
+          "enum": ["hard-check", "check", "off"],
+          "options": {
+            "enum_titles": ["Prüfen (Kritisch)", "Prüfen (Informativ)", "Ignorieren"]
+          }
+        },
+        "SystemUptimeWarnDays": {
+          "type": "integer",
+          "default": 5,
+          "title": "System uptime - Warn",
+          "description": "Ab diesem Wert in Tagen empfiehlt Notary einen Neustart. Der Hinweis erscheint in der GUI und kann vom Hintergrunddienst mit Cooldown an den Benutzer gemeldet werden.",
+          "enum": [3, 5, 7, 10, 14, 20, 30, 60],
+          "options": {
+            "enum_titles": ["3 Tage", "5 Tage", "7 Tage", "10 Tage", "14 Tage", "20 Tage", "30 Tage", "60 Tage"]
+          }
+        },
+        "SystemUptimeMaxDays": {
+          "type": "integer",
+          "default": 0,
+          "title": "System uptime - Max",
+          "description": "Ab diesem Wert in Tagen wertet Notary die System-Laufzeit als kritischen Befund. `Deaktiviert` bedeutet, dass nur die Warnschwelle berücksichtigt wird.",
+          "enum": [0, 5, 7, 10, 14, 20, 30, 60, 90],
+          "options": {
+            "enum_titles": ["Deaktiviert", "5 Tage", "7 Tage", "10 Tage", "14 Tage", "20 Tage", "30 Tage", "60 Tage", "90 Tage"]
+          }
+        }
+      }
+    },
+
+    "SSH": {
+      "type": "object",
+      "title": "SSH & Remote Login",
+      "propertyOrder": 78,
+      "options": { "collapsed": false },
+      "additionalProperties": false,
+      "properties": {
+        "DisableSSHPasswordAuthentication": {
+          "type": "string",
+          "default": "check",
+          "title": "SSH Passwort- und Tastatur-Authentifizierung deaktivieren",
+          "description": "Prüft oder erzwingt, dass sich Benutzer per SSH nicht mehr mit Passwort oder Tastatur-Interaktion anmelden können. Gedacht für Umgebungen, die nur noch Schlüssel-basierte SSH-Anmeldung erlauben.",
+          "enum": ["hard-enforce", "enforce", "off", "check", "hard-check"],
+          "options": {
+            "enum_titles": ["Erzwingen (Hard fail)", "Erzwingen (Best Effort)", "Ignorieren", "Prüfen (Informativ)", "Prüfen (Kritisch)"]
+          }
+        },
+        "ConfigureSSHClientAliveInterval": {
+          "type": "string",
+          "default": "check",
+          "title": "SSH ClientAliveInterval konfigurieren",
+          "description": "Prüft oder setzt den `ClientAliveInterval` des SSH-Servers. Damit trennt der Server inaktive SSH-Sitzungen nach einer definierten Zeitspanne kontrolliert.",
+          "enum": ["hard-enforce", "enforce", "off", "check", "hard-check"],
+          "options": {
+            "enum_titles": ["Erzwingen (Hard fail)", "Erzwingen (Best Effort)", "Ignorieren", "Prüfen (Informativ)", "Prüfen (Kritisch)"]
+          }
+        },
+        "SSHClientAliveInterval": {
+          "type": "integer",
+          "default": 900,
+          "title": "ClientAliveInterval (Sekunden)",
+          "description": "Legt fest, nach wie vielen Sekunden Inaktivität der SSH-Server ein Lebenszeichen vom Client erwartet.",
+          "enum": [300, 600, 900, 1800, 3600],
+          "options": {
+            "enum_titles": ["5 Minuten", "10 Minuten", "15 Minuten", "30 Minuten", "60 Minuten"]
+          }
+        },
+        "ConfigureSSHClientAliveCountMax": {
+          "type": "string",
+          "default": "check",
+          "title": "SSH ClientAliveCountMax konfigurieren",
+          "description": "Prüft oder setzt, wie viele unbeantwortete `ClientAlive`-Abfragen der SSH-Server zulässt, bevor er eine Sitzung beendet.",
+          "enum": ["hard-enforce", "enforce", "off", "check", "hard-check"],
+          "options": {
+            "enum_titles": ["Erzwingen (Hard fail)", "Erzwingen (Best Effort)", "Ignorieren", "Prüfen (Informativ)", "Prüfen (Kritisch)"]
+          }
+        },
+        "SSHClientAliveCountMax": {
+          "type": "integer",
+          "default": 0,
+          "title": "ClientAliveCountMax",
+          "description": "Legt fest, wie viele unbeantwortete `ClientAlive`-Pakete toleriert werden. `0` trennt die Sitzung sofort nach dem ersten ausbleibenden Lebenszeichen.",
+          "enum": [0, 1, 2, 3],
+          "options": {
+            "enum_titles": ["0", "1", "2", "3"]
+          }
+        }
+      }
+    },
+
+    "Sharing": {
+      "type": "object",
+      "title": "Sharing & Dienste",
+      "propertyOrder": 80,
+      "options": { "collapsed": false },
+      "additionalProperties": false,
+      "properties": {
+        "DisableBonjourAdvertising": {
+          "type": "string",
+          "default": "check",
+          "title": "4.1 Bonjour Advertising deaktivieren",
+          "enum": ["hard-enforce", "enforce", "off", "check", "hard-check"],
+          "options": {
+            "enum_titles": ["Erzwingen (Hard fail)", "Erzwingen (Best Effort)", "Ignorieren", "Prüfen (Informativ)", "Prüfen (Kritisch)"]
+          }
+        },
+        "DisableRemoteAppleEvents": {
+          "type": "string",
+          "default": "check",
+          "title": "2.4.1 Remote Apple Events deaktivieren",
+          "enum": ["hard-enforce", "enforce", "off", "check", "hard-check"],
+          "options": {
+            "enum_titles": ["Erzwingen (Hard fail)", "Erzwingen (Best Effort)", "Ignorieren", "Prüfen (Informativ)", "Prüfen (Kritisch)"]
+          }
+        },
+        "DisableInternetSharing": {
+          "type": "string",
+          "default": "check",
+          "title": "2.4.2 Internetfreigabe deaktivieren",
+          "enum": ["hard-enforce", "enforce", "off", "check", "hard-check"],
+          "options": {
+            "enum_titles": ["Erzwingen (Hard fail)", "Erzwingen (Best Effort)", "Ignorieren", "Prüfen (Informativ)", "Prüfen (Kritisch)"]
+          }
+        },
+        "DisableScreenSharing": {
+          "type": "string",
+          "default": "check",
+          "title": "2.4.3 Bildschirmfreigabe deaktivieren",
+          "enum": ["hard-enforce", "enforce", "off", "check", "hard-check"],
+          "options": {
+            "enum_titles": ["Erzwingen (Hard fail)", "Erzwingen (Best Effort)", "Ignorieren", "Prüfen (Informativ)", "Prüfen (Kritisch)"]
+          }
+        },
+        "DisablePrinterSharing": {
+          "type": "string",
+          "default": "check",
+          "title": "2.4.4 Druckerfreigabe deaktivieren",
+          "enum": ["hard-enforce", "enforce", "off", "check", "hard-check"],
+          "options": {
+            "enum_titles": ["Erzwingen (Hard fail)", "Erzwingen (Best Effort)", "Ignorieren", "Prüfen (Informativ)", "Prüfen (Kritisch)"]
+          }
+        },
+        "DisableRemoteLogin": {
+          "type": "string",
+          "default": "check",
+          "title": "2.4.5 Remote Login (SSH) deaktivieren",
+          "enum": ["hard-enforce", "enforce", "off", "check", "hard-check"],
+          "options": {
+            "enum_titles": ["Erzwingen (Hard fail)", "Erzwingen (Best Effort)", "Ignorieren", "Prüfen (Informativ)", "Prüfen (Kritisch)"]
+          }
+        },
+        "DisableDVDSharing": {
+          "type": "string",
+          "default": "check",
+          "title": "2.4.6 CD/DVD-Freigabe deaktivieren",
+          "enum": ["hard-enforce", "enforce", "off", "check", "hard-check"],
+          "options": {
+            "enum_titles": ["Erzwingen (Hard fail)", "Erzwingen (Best Effort)", "Ignorieren", "Prüfen (Informativ)", "Prüfen (Kritisch)"]
+          }
+        },
+        "DisableFileSharing": {
+          "type": "string",
+          "default": "check",
+          "title": "2.4.8 Dateifreigabe deaktivieren",
+          "enum": ["hard-enforce", "enforce", "off", "check", "hard-check"],
+          "options": {
+            "enum_titles": ["Erzwingen (Hard fail)", "Erzwingen (Best Effort)", "Ignorieren", "Prüfen (Informativ)", "Prüfen (Kritisch)"]
+          }
+        },
+        "DisableRemoteManagement": {
+          "type": "string",
+          "default": "check",
+          "title": "2.4.9 Apple Remote Management deaktivieren",
+          "enum": ["hard-enforce", "enforce", "off", "check", "hard-check"],
+          "options": {
+            "enum_titles": ["Erzwingen (Hard fail)", "Erzwingen (Best Effort)", "Ignorieren", "Prüfen (Informativ)", "Prüfen (Kritisch)"]
+          }
+        },
+        "DisableContentCaching": {
+          "type": "string",
+          "default": "check",
+          "title": "2.4.10 Content Caching deaktivieren",
+          "enum": ["hard-enforce", "enforce", "off", "check", "hard-check"],
+          "options": {
+            "enum_titles": ["Erzwingen (Hard fail)", "Erzwingen (Best Effort)", "Ignorieren", "Prüfen (Informativ)", "Prüfen (Kritisch)"]
+          }
+        },
+        "DisableHTTPServer": {
+          "type": "string",
+          "default": "check",
+          "title": "4.4 Apache HTTP-Server stoppen/deaktivieren",
+          "enum": ["hard-enforce", "enforce", "off", "check", "hard-check"],
+          "options": {
+            "enum_titles": ["Erzwingen (Hard fail)", "Erzwingen (Best Effort)", "Ignorieren", "Prüfen (Informativ)", "Prüfen (Kritisch)"]
+          }
+        },
+        "DisableNFSServer": {
+          "type": "string",
+          "default": "check",
+          "title": "4.5 NFS-Server stoppen/deaktivieren",
+          "enum": ["hard-enforce", "enforce", "off", "check", "hard-check"],
+          "options": {
+            "enum_titles": ["Erzwingen (Hard fail)", "Erzwingen (Best Effort)", "Ignorieren", "Prüfen (Informativ)", "Prüfen (Kritisch)"]
+          }
+        }
+      }
+    },
+
+    "PowerManagement": {
+      "type": "object",
+      "title": "Energie & Schlaf",
+      "propertyOrder": 90,
+      "options": { "collapsed": false },
+      "additionalProperties": false,
+      "properties": {
+        "DisableWOMP": {
+          "type": "string",
+          "default": "check",
+          "title": "2.8 Wake on Network (WOMP) deaktivieren",
+          "enum": ["hard-enforce", "enforce", "off", "check", "hard-check"],
+          "options": {
+            "enum_titles": ["Erzwingen (Hard fail)", "Erzwingen (Best Effort)", "Ignorieren", "Prüfen (Informativ)", "Prüfen (Kritisch)"]
+          }
+        },
+        "DisablePowerNap": {
+          "type": "string",
+          "default": "check",
+          "title": "2.9 Power Nap deaktivieren (nur Intel CPU)",
+          "enum": ["hard-enforce", "enforce", "off", "check", "hard-check"],
+          "options": {
+            "enum_titles": ["Erzwingen (Hard fail)", "Erzwingen (Best Effort)", "Ignorieren", "Prüfen (Informativ)", "Prüfen (Kritisch)"]
+          }
+        },
+        "ForceHibernateOnSleep": {
+          "type": "string",
+          "default": "check",
+          "title": "5.10 Hibernate auf Sleep erzwingen",
+          "enum": ["hard-enforce", "enforce", "off", "check", "hard-check"],
+          "options": {
+            "enum_titles": ["Erzwingen (Hard fail)", "Erzwingen (Best Effort)", "Ignorieren", "Prüfen (Informativ)", "Prüfen (Kritisch)"]
+          }
+        },
+        "DestroyFileVaultKeyOnStandby": {
+          "type": "string",
+          "default": "check",
+          "title": "5.10.1 DestroyFileVaultKeyOnStandby aktivieren",
+          "enum": ["hard-enforce", "enforce", "off", "check", "hard-check"],
+          "options": {
+            "enum_titles": ["Erzwingen (Hard fail)", "Erzwingen (Best Effort)", "Ignorieren", "Prüfen (Informativ)", "Prüfen (Kritisch)"]
+          }
+        }
+      }
+    },
+
+    "LoginWindow": {
+      "type": "object",
+      "title": "Login-Fenster & Sicherheit",
+      "propertyOrder": 100,
+      "options": { "collapsed": false },
+      "additionalProperties": false,
+      "properties": {
+        "DisableAutomaticLogin": {
+          "type": "string",
+          "default": "check",
+          "title": "5.8 Automatischen Login deaktivieren",
+          "enum": ["hard-enforce", "enforce", "off", "check", "hard-check"],
+          "options": {
+            "enum_titles": ["Erzwingen (Hard fail)", "Erzwingen (Best Effort)", "Ignorieren", "Prüfen (Informativ)", "Prüfen (Kritisch)"]
+          }
+        },
+        "ForceLoginWindowFullName": {
+          "type": "string",
+          "default": "check",
+          "title": "6.1.1 Login mit Name & Passwort (Avatar/Name ausblenden)",
+          "enum": ["hard-enforce", "enforce", "off", "check", "hard-check"],
+          "options": {
+            "enum_titles": ["Erzwingen (Hard fail)", "Erzwingen (Best Effort)", "Ignorieren", "Prüfen (Informativ)", "Prüfen (Kritisch)"]
+          }
+        },
+        "EnableLoginWindowSecurityBanner": {
+          "type": "string",
+          "default": "off",
+          "title": "Lokale Sicherheitskennzeichnung im Login-Fenster anzeigen",
+          "description": "Prüft oder erzwingt einen sichtbaren Hinweistext im macOS-Login-Fenster. Das ist nützlich für lokale Sicherheitskennzeichnung, Nutzungsbedingungen oder Kontaktinformationen des Betreibers.",
+          "enum": ["hard-enforce", "enforce", "off", "check", "hard-check"],
+          "options": {
+            "enum_titles": ["Erzwingen (Hard fail)", "Erzwingen (Best Effort)", "Ignorieren", "Prüfen (Informativ)", "Prüfen (Kritisch)"]
+          }
+        },
+        "EnableSSHLoginBanner": {
+          "type": "string",
+          "default": "off",
+          "title": "SSH Sicherheits-Banner anzeigen",
+          "description": "Prüft oder erzwingt einen Bannertext für eingehende SSH-Anmeldungen. So kann vor der Anmeldung eine lokale Sicherheitskennzeichnung oder Nutzungsbedingung eingeblendet werden.",
+          "enum": ["hard-enforce", "enforce", "off", "check", "hard-check"],
+          "options": {
+            "enum_titles": ["Erzwingen (Hard fail)", "Erzwingen (Best Effort)", "Ignorieren", "Prüfen (Informativ)", "Prüfen (Kritisch)"]
+          }
+        },
+        "SecurityBannerText": {
+          "type": "string",
+          "default": "",
+          "title": "Sicherheitskennzeichnung / Bannertext",
+          "description": "Optionaler Text für Login-Fenster und SSH-Banner. Wenn dieses Feld leer bleibt, baut Notary automatisch einen Hinweis aus Organisationsname und Kontaktangabe.",
+          "options": {
+            "hidden": false
+          }
+        },
+        "DisablePasswordHints": {
+          "type": "string",
+          "default": "check",
+          "title": "6.1.2 Passwort-Hinweise deaktivieren",
+          "enum": ["hard-enforce", "enforce", "off", "check", "hard-check"],
+          "options": {
+            "enum_titles": ["Erzwingen (Hard fail)", "Erzwingen (Best Effort)", "Ignorieren", "Prüfen (Informativ)", "Prüfen (Kritisch)"]
+          }
+        },
+        "SetSudoTimeout": {
+          "type": "string",
+          "default": "check",
+          "title": "5.3 Sudo-Timeout erzwingen",
+          "description": "Prüft oder erzwingt die Gültigkeitsdauer eines sudo-Authentifizierungs-Tickets. Kürzere Werte reduzieren das Risiko, dass privilegierte Sitzungen zu lange ohne erneute Kennwortabfrage offen bleiben.",
+          "enum": ["hard-enforce", "enforce", "off", "check", "hard-check"],
+          "options": {
+            "enum_titles": ["Erzwingen (Hard fail)", "Erzwingen (Best Effort)", "Ignorieren", "Prüfen (Informativ)", "Prüfen (Kritisch)"]
+          }
+        },
+        "SudoTimeout": {
+          "type": "integer",
+          "default": 5,
+          "title": "Sudo Inaktivitäts-Timeout (Minuten)",
+          "enum": [0,1,5,10,20,-1],
+          "options": {
+            "enum_titles": ["sofort", "1 Minute", "5 Minuten", "10 Minuten", "20 Minuten", "nie"],
+            "hidden": false,
+            "show_if": { "SetSudoTimeout": "check" }
+          },
+          "watch": { "SetSudoTimeout": "root.LoginWindow.SetSudoTimeout" }
+        },
+        "EnableSudoCommandLogging": {
+          "type": "string",
+          "default": "check",
+          "title": "Sudo Befehls-Protokollierung aktivieren",
+          "description": "Prüft oder erzwingt, dass erlaubte sudo-Befehle protokolliert werden (`log_allowed`). Das erleichtert spätere Nachvollziehbarkeit und entspricht gängigen NIST-/CIS-Härtungsempfehlungen.",
+          "enum": ["hard-enforce", "enforce", "off", "check", "hard-check"],
+          "options": {
+            "enum_titles": ["Erzwingen (Hard fail)", "Erzwingen (Best Effort)", "Ignorieren", "Prüfen (Informativ)", "Prüfen (Kritisch)"]
+          }
+        },
+        "EnforceSudoTimestampTypeTTY": {
+          "type": "string",
+          "default": "check",
+          "title": "Sudo Timestamp-Typ auf tty setzen",
+          "description": "Prüft oder erzwingt, dass sudo Authentifizierungs-Timestamps pro Terminal (`tty`) geführt werden. So wird ein sudo-Ticket nicht terminalübergreifend wiederverwendet.",
+          "enum": ["hard-enforce", "enforce", "off", "check", "hard-check"],
+          "options": {
+            "enum_titles": ["Erzwingen (Hard fail)", "Erzwingen (Best Effort)", "Ignorieren", "Prüfen (Informativ)", "Prüfen (Kritisch)"]
+          }
+        },
+        "DisableGuestUser": {
+          "type": "string",
+          "default": "check",
+          "title": "6.1.3 Gastbenutzer deaktivieren",
+          "enum": ["hard-enforce", "enforce", "off", "check", "hard-check"],
+          "options": {
+            "enum_titles": ["Erzwingen (Hard fail)", "Erzwingen (Best Effort)", "Ignorieren", "Prüfen (Informativ)", "Prüfen (Kritisch)"]
+          }
+        },
+        "DisableGuestAccessToShares": {
+          "type": "string",
+          "default": "check",
+          "title": "6.1.4 Gastzugriff auf Freigaben deaktivieren",
+          "enum": ["hard-enforce", "enforce", "off", "check", "hard-check"],
+          "options": {
+            "enum_titles": ["Erzwingen (Hard fail)", "Erzwingen (Best Effort)", "Ignorieren", "Prüfen (Informativ)", "Prüfen (Kritisch)"]
+          }
+        },
+        "RemoveGuestHomeFolder": {
+          "type": "string",
+          "default": "check",
+          "title": "6.1.5 Gast-Home nach Logout entfernen",
+          "enum": ["hard-enforce", "enforce", "off", "check", "hard-check"],
+          "options": {
+            "enum_titles": ["Erzwingen (Hard fail)", "Erzwingen (Best Effort)", "Ignorieren", "Prüfen (Informativ)", "Prüfen (Kritisch)"]
+          }
+        },
+        "ForceAdminPWForPreferences": {
+          "type": "string",
+          "default": "check",
+          "title": "5.11 Admin Passwort für systemweite Einstellungen anfordern",
+          "enum": ["hard-enforce", "enforce", "off", "check", "hard-check"],
+          "options": {
+            "enum_titles": ["Erzwingen (Hard fail)", "Erzwingen (Best Effort)", "Ignorieren", "Prüfen (Informativ)", "Prüfen (Kritisch)"]
+          }
+        },
+        "DisableFastUserSwitching": {
+          "type": "string",
+          "default": "check",
+          "title": "5.16 Schneller Benutzerwechsel deaktivieren (bis macOS 10.15)",
+          "enum": ["off", "check"],
+          "options": {
+            "enum_titles": ["Ignorieren", "Prüfen"]
+          }
+        },
+        "EnableLibraryValidation": {
+          "type": "string",
+          "default": "check",
+          "title": "5.20 Library Validation aktivieren",
+          "enum": ["hard-enforce", "enforce", "off", "check", "hard-check"],
+          "options": {
+            "enum_titles": ["Erzwingen (Hard fail)", "Erzwingen (Best Effort)", "Ignorieren", "Prüfen (Informativ)", "Prüfen (Kritisch)"]
+          }
+        }
+      }
+    },
+
+    "Environment": {
+      "type": "object",
+      "title": "Umfeld & Management",
+      "propertyOrder": 105,
+      "options": { "collapsed": false },
+      "additionalProperties": false,
+      "properties": {
+        "RequireMDMEnrollment": {
+          "type": "string",
+          "default": "off",
+          "title": "MDM-Anbindung erforderlich",
+          "description": "Prüft, ob der Mac in eine MDM-Lösung eingeschrieben ist. Der Check ist als Umfeldprüfung gedacht und hilft dabei, Geräte ohne zentrale Verwaltung schnell zu erkennen.",
+          "enum": ["hard-check", "check", "off"],
+          "options": {
+            "enum_titles": ["Prüfen (Kritisch)", "Prüfen (Informativ)", "Ignorieren"]
+          }
+        },
+        "RequireDirectoryService": {
+          "type": "string",
+          "default": "off",
+          "title": "Verzeichnisdienst / Directory-Bindung erforderlich",
+          "description": "Prüft, ob in der lokalen Suchkonfiguration neben dem lokalen Knoten auch ein Verzeichnisdienst wie Active Directory oder LDAP eingebunden ist.",
+          "enum": ["hard-check", "check", "off"],
+          "options": {
+            "enum_titles": ["Prüfen (Kritisch)", "Prüfen (Informativ)", "Ignorieren"]
+          }
+        },
+        "RequireSecurityAgent": {
+          "type": "string",
+          "default": "off",
+          "title": "AV-/EDR-Agent erforderlich",
+          "description": "Prüft, ob mindestens ein erwartetes Sicherheitsprodukt auf dem Gerät gefunden wird. Das ist bewusst produktabhängig und eignet sich für Umgebungen mit klar definiertem AV-/EDR-Stack.",
+          "enum": ["hard-check", "check", "off"],
+          "options": {
+            "enum_titles": ["Prüfen (Kritisch)", "Prüfen (Informativ)", "Ignorieren"]
+          }
+        },
+        "ExpectedSecurityProducts": {
+          "type": "string",
+          "default": "",
+          "title": "Erwartete AV-/EDR-Produkte (kommagetrennt)",
+          "description": "Optionaler Suchbegriff oder Produktname wie `JamfProtect`, `CrowdStrike Falcon` oder `Microsoft Defender`. Wenn leer, nutzt Notary einen sinnvollen Standardsatz gängiger Sicherheitsprodukte.",
+          "options": {
+            "hidden": false
+          }
+        }
+      }
+    },
+
+    "PerUser": {
+      "type": "object",
+      "title": "Pro Benutzer (FEU)",
+      "propertyOrder": 110,
+      "options": { "collapsed": false },
+      "additionalProperties": false,
+      "properties": {
+        "DisableBluetoothSharing": {
+          "type": "string",
+          "default": "off",
+          "title": "2.4.7 Bluetooth-Sharing deaktivieren",
+          "enum": ["check", "enforce", "off"],
+          "options": {
+            "enum_titles": ["Prüfen", "Erzwingen", "Aus"]
+          }
+        },
+        "DisableMediaSharing": {
+          "type": "string",
+          "default": "off",
+          "title": "2.4.11 Medienfreigabe deaktivieren",
+          "enum": ["check", "enforce", "off"],
+          "options": {
+            "enum_titles": ["Prüfen", "Erzwingen", "Aus"]
+          }
+        },
+        "DisableAirDrop": {
+          "type": "string",
+          "default": "off",
+          "title": "2.4.12 AirDrop deaktivieren",
+          "enum": ["check", "enforce", "off"],
+          "options": {
+            "enum_titles": ["Prüfen", "Erzwingen", "Aus"]
+          }
+        },
+        "AirDropAutoDisableMinutes": {
+          "type": "integer",
+          "default": 0,
+          "title": "AirDrop nach Zeit automatisch deaktivieren",
+          "description": "Beta: Engagement-only. Wenn ein Benutzer AirDrop explizit aktiviert, setzt Notary AirDrop nach der gewählten Zeit wieder auf deaktiviert. 0 deaktiviert diese Funktion.",
+          "enum": [0, 5, 15, 30, 60, 120, 240],
+          "options": {
+            "enum_titles": ["Aus", "5 Minuten", "15 Minuten", "30 Minuten", "1 Stunde", "2 Stunden", "4 Stunden"]
+          }
+        },
+        "DisableAdTracking": {
+          "type": "string",
+          "default": "off",
+          "title": "2.5.6 Personalisierte Werbung deaktivieren",
+          "enum": ["check", "enforce", "off"],
+          "options": {
+            "enum_titles": ["Prüfen", "Erzwingen", "Aus"]
+          }
+        },
+        "EnableTerminalSecureKeyboard": {
+          "type": "string",
+          "default": "off",
+          "title": "2.10 Terminal: Secure Keyboard Entry",
+          "enum": ["check", "enforce", "off"],
+          "options": {
+            "enum_titles": ["Prüfen", "Erzwingen", "Aus"]
+          }
+        },
+        "DisableSiri": {
+          "type": "string",
+          "default": "off",
+          "title": "2.13 Siri deaktivieren",
+          "enum": ["check", "enforce", "off"],
+          "options": {
+            "enum_titles": ["Prüfen", "Erzwingen", "Aus"]
+          }
+        },
+        "ForceShowWifiStatus": {
+          "type": "string",
+          "default": "off",
+          "title": "4.2 WLAN-Status in Menüleiste anzeigen",
+          "enum": ["check", "enforce", "off"],
+          "options": {
+            "enum_titles": ["Prüfen", "Erzwingen", "Aus"]
+          }
+        },
+        "SecureHomeFolders": {
+          "type": "string",
+          "default": "off",
+          "title": "5.1.1 Home-Verzeichnisse härten (Mode 700)",
+          "enum": ["enforce", "off"],
+          "options": {
+            "enum_titles": ["Durchsetzen", "Aus"]
+          }
+        },
+        "LockLoginKeychain": {
+          "type": "string",
+          "default": "off",
+          "title": "5.4 Login-Schlüsselbund nach Inaktivität sperren",
+          "enum": ["check", "enforce", "off"],
+          "options": {
+            "enum_titles": ["Prüfen", "Erzwingen", "Aus"]
+          }
+        },
+        "LockKeychainInactivity": {
+          "type": "integer",
+          "default": 21600,
+          "title": "Inaktivität bis Sperre (Sekunden)",
+          "enum": [60, 600, 3600, 10800, 21600, 86400],
+          "options": {
+            "enum_titles": ["1 Minute", "10 Minuten", "1 Stunde", "3 Stunden", "6 Stunden", "1 Tag"],
+            "hidden": false,
+            "show_if": { "LockLoginKeychain": "enforce" }
+          },
+          "watch": { "LockLoginKeychain": "root.PerUser.LockLoginKeychain" }
+        },
+        "RemoveUserPasswordHints": {
+          "type": "string",
+          "default": "off",
+          "title": "5.15 Passwort-Hints entfernen",
+          "enum": ["enforce", "off"],
+          "options": {
+            "enum_titles": ["Durchsetzen", "Aus"]
+          }
+        },
+        "ForceShowFileNameExtensions": {
+          "type": "string",
+          "default": "off",
+          "title": "6.2 Dateiendungen anzeigen",
+          "enum": ["enforce", "off"],
+          "options": {
+              "enum_titles": ["Durchsetzen", "Aus"]
+          }
+        },
+        "DisableSafariDownloadAutoRun": {
+          "type": "string",
+          "default": "off",
+          "title": "6.3 Safari: 'Sichere' Downloads nicht automatisch öffnen",
+          "enum": ["check", "enforce", "off"],
+          "options": {
+            "enum_titles": ["Prüfen", "Erzwingen", "Aus"]
+          }
+        }
+      }
+    }
+  }
+}

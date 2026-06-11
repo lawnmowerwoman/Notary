@@ -1,0 +1,57 @@
+name: Bug Report
+description: Melde einen Defekt, eine Regression oder unerwartetes Verhalten in Notary.
+title: "[Bug]: "
+labels:
+  - bug
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Danke für den Report. Bitte beschreibe das Problem so konkret wie möglich, damit wir es reproduzieren und priorisieren können.
+  - type: textarea
+    id: summary
+    attributes:
+      label: Zusammenfassung
+      description: Was ist kaputt oder verhält sich anders als erwartet?
+      placeholder: Kurze Beschreibung des Problems
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Reproduktionsschritte
+      description: Welche Schritte führen zum Problem?
+      placeholder: |
+        1. ...
+        2. ...
+        3. ...
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Erwartetes Verhalten
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Tatsächliches Verhalten
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs / Hinweise
+      description: Relevante Ausgaben, Screenshots, Plist-Inhalte oder Jamf-/LaunchDaemon-Kontext.
+      render: shell
+  - type: input
+    id: version
+    attributes:
+      label: Notary-Version
+      placeholder: "z. B. 2.0 / 1A148f"
+  - type: input
+    id: macos
+    attributes:
+      label: macOS-Version
+      placeholder: "z. B. macOS 15.4"

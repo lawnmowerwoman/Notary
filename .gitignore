@@ -1,9 +1,7 @@
 .DS_Store
 /.build
 /Packages
-/dist/*
-!/dist/
-!/dist/*.pkg
+/dist
 /var
 /tmp
 /logs

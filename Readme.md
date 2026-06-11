@@ -60,6 +60,7 @@ Der Transporter verwendet heute folgende Regeln:
 - Falls keine Änderung vorliegt, wird frühestens nach 60 Minuten ein Heartbeat geschrieben.
 - Das Jamf-Bearer-Token wird in der Plist wiederverwendet und erst bei Ablauf oder nach einem `401` erneuert.
 - Die EA-Definitionen werden gecacht und mit Cooldown aktualisiert, um unnötige API-Last zu vermeiden.
+- Wenn `Notary Percent` nachträglich direkt in Jamf angelegt wird, ohne das Deploy-Script erneut auf dem Client auszuführen, kann die automatische Prozentwert-Erkennung wegen EA-Cache und Refresh-Cooldown bis zu 24 Stunden brauchen.
 
 ## Persistenz
 
@@ -180,7 +181,7 @@ Wichtig für Beta-Tester:
 Die visuelle Richtung für Notary ist aktuell in zwei Referenzen festgehalten:
 
 - [Design-Styleguide](/Users/steffi/Coding/Notary/Dokumentation/Design-Styleguide.md)
-- [App-Icon-Konzept](Dokumentation/Notary-App-Icon-Concept.svg)
+- [App-Icon-Konzept](/Users/steffi/Coding/Notary/Dokumentation/Notary-App-Icon-Concept.svg)
 - [Packaging-Plan](/Users/steffi/Coding/Notary/Dokumentation/Packaging-Plan.md)
 
 Diese Dateien definieren den derzeit bekannten Zielcharakter für GUI, Materialität, Informationshierarchie und das Motiv `Proof im Shield`.

@@ -1,0 +1,31 @@
+name: Benchmark / Check Request
+description: Fordere einen neuen CIS-Benchmark, eine neue Prüfung oder eine Anpassung bestehender Checks an.
+title: "[Benchmark]: "
+labels:
+  - benchmark
+body:
+  - type: textarea
+    id: benchmark
+    attributes:
+      label: Benchmark / Check
+      description: Welcher Benchmark oder welche Prüfung soll ergänzt oder angepasst werden?
+      placeholder: "z. B. CIS 2.4.5, Uptime-Warnung, MDM-Status-Prüfung"
+    validations:
+      required: true
+  - type: textarea
+    id: rationale
+    attributes:
+      label: Begründung
+      description: Warum ist diese Prüfung relevant?
+    validations:
+      required: true
+  - type: textarea
+    id: desired_output
+    attributes:
+      label: Gewünschtes Ergebnis
+      description: Wie soll das Ergebnis im Runner, Proof oder Transporter erscheinen?
+  - type: textarea
+    id: references
+    attributes:
+      label: Referenzen
+      description: CIS-Referenzen, Apple-Dokumentation oder interne Vorgaben.

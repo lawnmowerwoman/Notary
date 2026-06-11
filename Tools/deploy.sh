@@ -6,9 +6,10 @@
 #  - ensures Jamf EAs exist:
 #      UPDATE=true  -> TEXT EAs (runner updates via API)
 #      UPDATE=false -> SCRIPT EAs (Jamf recon reads from twccr.plist)
+#      --report%    -> optional INTEGER EA "Notary Percent"
 # ==============================================================================
 
-VERSION="2.1.1"
+VERSION="2.1.2"
 echo "Deploy Notary – v${VERSION}"
 
 emulate -L zsh
@@ -32,7 +33,8 @@ plist_write_state() {
   local jamf_client_id="$2"
   local jamf_client_secret="$3"
   local api_update="$4"
-  local ignore_local="$5"
+  local report_percent="$5"
+  local ignore_local="$6"
   local plist_dir lock_dir tmp_path attempts=0
   local retry_round=1 max_rounds=3 max_attempts=100 stale_after=30 lock_mtime=0 now=0
 
@@ -111,6 +113,8 @@ plist_write_state() {
 
     /usr/libexec/PlistBuddy -c "Delete :apiupdate" "${tmp_path}" >/dev/null 2>&1 || true
     /usr/libexec/PlistBuddy -c "Add :apiupdate bool ${api_update:l}" "${tmp_path}"
+    /usr/libexec/PlistBuddy -c "Delete :reportpercent" "${tmp_path}" >/dev/null 2>&1 || true
+    /usr/libexec/PlistBuddy -c "Add :reportpercent bool ${report_percent:l}" "${tmp_path}"
 
     # Write permissions before the final move so the on-disk plist remains root-only.
     chmod 600 "${tmp_path}" || true
@@ -171,6 +175,7 @@ STORAGE="/var/db/notary.plist"
 CLIENT_ID=""
 CLIENT_SECRET=""
 UPDATE=true
+REPORT_PERCENT=false
 INTERVAL="3600"
 DAILY_TIME=""
 IGNORE_LOCAL=false
@@ -181,6 +186,7 @@ for arg in "$@"; do
     --secret=*|-s=*)    CLIENT_SECRET="${arg#*=}" ;;
     --noupdate|--no-update) UPDATE=false ;;
     --update|-u)        UPDATE=true ;;
+    --report%|-%|--report-percent) REPORT_PERCENT=true ;;
     --interval=*|-i=*)  INTERVAL="${arg#*=}" ;;
     --daily=*)          DAILY_TIME="${arg#*=}" ;;
     --ignorelocal|--ignore-local) IGNORE_LOCAL=true ;;
@@ -189,10 +195,11 @@ for arg in "$@"; do
 done
 
 # --- Load existing creds from storage if present -------------------------------
-existing_id=""; existing_secret=""
+existing_id=""; existing_secret=""; existing_report_percent=""
 if [[ "${IGNORE_LOCAL:l}" != "true" && -f "${STORAGE}" ]]; then
   existing_id="$(plist_read_key "${STORAGE}" "jamfClientID")"
   existing_secret="$(plist_read_key "${STORAGE}" "jamfClientSecret")"
+  existing_report_percent="$(plist_read_key "${STORAGE}" "reportpercent")"
 fi
 
 # 2a) Fill missing credentials from stored state so routine updates do not need
@@ -205,6 +212,10 @@ if [[ -z "${CLIENT_SECRET}" && -n "${existing_secret}" ]]; then
 fi
 if [[ "${CLIENT_ID}" == "${existing_id}" && "${CLIENT_SECRET}" == "${existing_secret}" && -n "${existing_id}" && -n "${existing_secret}" ]]; then
   log "INFO: Using stored Jamf API credentials from ${STORAGE}"
+fi
+if [[ "${REPORT_PERCENT:l}" != "true" && "${existing_report_percent:l}" == "true" ]]; then
+  REPORT_PERCENT=true
+  log "INFO: Using stored compliance percent reporting flag from ${STORAGE}"
 fi
 
 # 2b) If creds passed but storage already has creds -> log update notice
@@ -256,11 +267,11 @@ fi
 # These keys must match RunnerState / ManagedConfig loading.
 # (No backward compatibility needed, per your note.)
 if (( haveCreds == 1 )); then
-  plist_write_state "${STORAGE}" "${CLIENT_ID}" "${CLIENT_SECRET}" "${UPDATE}" "${IGNORE_LOCAL}"
+  plist_write_state "${STORAGE}" "${CLIENT_ID}" "${CLIENT_SECRET}" "${UPDATE}" "${REPORT_PERCENT}" "${IGNORE_LOCAL}"
 else
-  plist_write_state "${STORAGE}" "" "" "${UPDATE}" "${IGNORE_LOCAL}"
+  plist_write_state "${STORAGE}" "" "" "${UPDATE}" "${REPORT_PERCENT}" "${IGNORE_LOCAL}"
 fi
-log "Wrote state to ${STORAGE} (apiupdate=${UPDATE})"
+log "Wrote state to ${STORAGE} (apiupdate=${UPDATE}, reportpercent=${REPORT_PERCENT})"
 
 # --- HTTP helpers (for EA creation) -------------------------------------------
 CURL_STATUS=""; CURL_BODY=""; CURL_ERROR="0"
@@ -367,6 +378,9 @@ invalidateToken() {
 
 # --- EA creation ---------------------------------------------------------------
 EA_NAMES=("Notary Runner" "Notary Issues" "Notary Compliance")
+if [[ "${REPORT_PERCENT}" == true ]]; then
+  EA_NAMES+=("Notary Percent")
+fi
 
 ensure_extension_attributes() {
   getBearerToken || { log "ERROR: cannot get bearer token"; return 1; }
@@ -433,16 +447,20 @@ EOF
 
     if [[ "${UPDATE}" == true ]]; then
       # runner updates via API -> TEXT EA
+      local data_type="STRING"
+      if [[ "$name" == "Notary Percent" ]]; then
+        data_type="INTEGER"
+      fi
       if command -v jq >/dev/null 2>&1; then
-        payload=$(jq -n --arg n "$name" --arg d "Created by Notary deploy script v2.0" \
-          '{name:$n, description:$d, dataType:"STRING", enabled:true, inventoryDisplayType:"GENERAL", inputType:"TEXT"}')
+        payload=$(jq -n --arg n "$name" --arg d "Created by Notary deploy script v2.0" --arg dt "$data_type" \
+          '{name:$n, description:$d, dataType:$dt, enabled:true, inventoryDisplayType:"GENERAL", inputType:"TEXT"}')
       else
         payload=$(python3 - <<PY
 import json
 print(json.dumps({
   "name": "$name",
   "description": "Created by Notary deploy script v2.0",
-  "dataType": "STRING",
+  "dataType": "$data_type",
   "enabled": True,
   "inventoryDisplayType": "GENERAL",
   "inputType": "TEXT"
@@ -453,17 +471,21 @@ PY
     else
       # recon mode -> SCRIPT EA reading from notary.plist
       local ea
+      local data_type="STRING"
+      if [[ "$name" == "Notary Percent" ]]; then
+        data_type="INTEGER"
+      fi
       ea="echo \"<result>\$(/usr/bin/defaults read ${STORAGE} \\\"${name}\\\" 2>/dev/null)</result>\""
       if command -v jq >/dev/null 2>&1; then
-        payload=$(jq -n --arg n "$name" --arg d "Created by Notary deploy script v2.0 (recon mode)" --arg e "$ea" \
-          '{name:$n, description:$d, dataType:"STRING", enabled:true, inventoryDisplayType:"GENERAL", inputType:"SCRIPT", scriptContents:$e}')
+        payload=$(jq -n --arg n "$name" --arg d "Created by Notary deploy script v2.0 (recon mode)" --arg e "$ea" --arg dt "$data_type" \
+          '{name:$n, description:$d, dataType:$dt, enabled:true, inventoryDisplayType:"GENERAL", inputType:"SCRIPT", scriptContents:$e}')
       else
         payload=$(python3 - <<PY
 import json
 print(json.dumps({
   "name": "$name",
   "description": "Created by Notary deploy script v2.0 (recon mode)",
-  "dataType": "STRING",
+  "dataType": "$data_type",
   "enabled": True,
   "inventoryDisplayType": "GENERAL",
   "inputType": "SCRIPT",
