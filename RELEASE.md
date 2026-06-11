@@ -23,17 +23,37 @@ Vor einem Release sollte gelten:
 
 ## Tag-Schema
 
+Notary trennt ab sofort sauber zwischen:
+
+- öffentlichen Betas
+- Release Candidates
+- finalen Releases
+- Hotfixes nach einem finalen Release
+
 Empfohlenes Tag-Schema:
 
-- `v2.0.0`
-- `v2.1.0`
-- `v2.1.1`
+- öffentliche Beta: `v2.1-beta.1`
+- weitere Beta: `v2.1-beta.2`
+- Release Candidate: `v2.1-rc.1`
+- finaler Release: `v2.1`
+- späterer Hotfix: `v2.1.1`
 
 Verwendung:
 
-- Major: nur bei größeren inkompatiblen Umstellungen
-- Minor: für neue Funktionen oder größere Erweiterungen
-- Patch: für Fehlerbehebungen, kleinere Verbesserungen und reine Wartungsreleases
+- `vX.Y-beta.N`
+  Für öffentliche Teststände. Diese Tags verbrauchen bewusst keinen Patch-Slot.
+- `vX.Y-rc.N`
+  Für die Einfrierphase kurz vor dem Release.
+- `vX.Y`
+  Für den finalen Release einer Minor-Linie.
+- `vX.Y.Z`
+  Ausschließlich für echte Fehlerbehebungen nach einem finalen Release.
+
+Wichtig:
+
+- Ein finaler Release bekommt keinen `.0`-Suffix mehr.
+- Öffentliche Betas werden im Release-Titel lesbar benannt, die Tags bleiben kurz und maschinenfreundlich.
+- Das interne Build-Label, z. B. `1B15n` oder `1B100`, bleibt davon getrennt und wird zusätzlich im Paket-, Release- oder Support-Kontext geführt.
 
 ## Release-Ablauf
 
@@ -61,8 +81,8 @@ Vor einem Release mit geändertem `Tools/deploy.sh` zusätzlich prüfen:
 5. Git-Tag erzeugen:
 
 ```sh
-git tag -a vX.Y.Z -m "Release vX.Y.Z"
-git push origin vX.Y.Z
+git tag -a vX.Y -m "Release vX.Y"
+git push origin vX.Y
 ```
 
 6. Auf GitHub ein Release auf Basis des Tags veröffentlichen.

@@ -4,6 +4,7 @@ Alle wesentlichen Änderungen an Notary sollen hier in knapper Form dokumentiert
 
 ## Unreleased
 
+- Git-Tagging für öffentliche Vorabstände geschärft: künftig `vX.Y-beta.N`, optional `vX.Y-rc.N`, final `vX.Y` und echte Hotfixes erst danach als `vX.Y.Z`.
 - Report-GUI als gerätebezogenes Dashboard überarbeitet, inklusive Seriennummer, Hardware-Modell, Management-Zuordnung und Build-Hinweis im Kopfbereich.
 - Jamf Reporter als lokale Admin-Ansicht ergänzt: filterbare Geräteliste aus Jamf sowie Detailblöcke für letzten Transport, Proof und gruppierte Notary-Issues pro Gerät.
 - Transporter erkennt eine vorhandene `Notary Percent`-EA nachträglich und aktiviert das Prozent-Reporting automatisch; bei manuell in Jamf angelegter EA kann dies wegen EA-Cache/Cooldown ohne erneuten Deploy-Lauf bis zu 24 Stunden dauern.
