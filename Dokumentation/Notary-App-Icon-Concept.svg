@@ -1,0 +1,63 @@
+<svg width="1024" height="1024" viewBox="0 0 1024 1024" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="120" y1="96" x2="896" y2="928" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#EAF3FF"/>
+      <stop offset="0.42" stop-color="#CBDCF4"/>
+      <stop offset="1" stop-color="#93A8C8"/>
+    </linearGradient>
+    <linearGradient id="glass" x1="278" y1="164" x2="768" y2="812" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FFFFFF" stop-opacity="0.92"/>
+      <stop offset="0.52" stop-color="#EDF5FF" stop-opacity="0.70"/>
+      <stop offset="1" stop-color="#D8E6FA" stop-opacity="0.44"/>
+    </linearGradient>
+    <linearGradient id="paper" x1="395" y1="338" x2="640" y2="684" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FDFEFF" stop-opacity="0.98"/>
+      <stop offset="1" stop-color="#E8F1FE" stop-opacity="0.82"/>
+    </linearGradient>
+    <linearGradient id="stroke" x1="340" y1="240" x2="706" y2="760" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#F7FBFF" stop-opacity="0.9"/>
+      <stop offset="1" stop-color="#AFC4E6" stop-opacity="0.9"/>
+    </linearGradient>
+    <filter id="shadow" x="86" y="82" width="852" height="860" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feFlood flood-opacity="0" result="BackgroundImageFix"/>
+      <feColorMatrix in="SourceAlpha" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0" result="hardAlpha"/>
+      <feOffset dy="26"/>
+      <feGaussianBlur stdDeviation="28"/>
+      <feColorMatrix type="matrix" values="0 0 0 0 0.141176 0 0 0 0 0.219608 0 0 0 0 0.341176 0 0 0 0.18 0"/>
+      <feBlend mode="normal" in2="BackgroundImageFix" result="effect1_dropShadow_1_1"/>
+      <feBlend mode="normal" in="SourceGraphic" in2="effect1_dropShadow_1_1" result="shape"/>
+    </filter>
+    <filter id="innerGlow" x="118" y="94" width="788" height="788" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feFlood flood-opacity="0" result="BackgroundImageFix"/>
+      <feBlend mode="normal" in="SourceGraphic" in2="BackgroundImageFix" result="shape"/>
+      <feColorMatrix in="SourceAlpha" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0" result="hardAlpha"/>
+      <feOffset dy="-8"/>
+      <feGaussianBlur stdDeviation="12"/>
+      <feComposite in2="hardAlpha" operator="arithmetic" k2="-1" k3="1"/>
+      <feColorMatrix type="matrix" values="0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 0.55 0"/>
+      <feBlend mode="screen" in2="shape" result="effect1_innerShadow_1_1"/>
+    </filter>
+  </defs>
+
+  <rect x="56" y="56" width="912" height="912" rx="208" fill="url(#bg)"/>
+  <rect x="56" y="56" width="912" height="912" rx="208" fill="#0E203A" fill-opacity="0.10"/>
+  <rect x="72" y="72" width="880" height="880" rx="190" stroke="white" stroke-opacity="0.32" stroke-width="2"/>
+
+  <g filter="url(#shadow)">
+    <path d="M512 150L744 222V426C744 588 651 726 512 792C373 726 280 588 280 426V222L512 150Z" fill="url(#glass)"/>
+    <path d="M512 150L744 222V426C744 588 651 726 512 792C373 726 280 588 280 426V222L512 150Z" stroke="url(#stroke)" stroke-width="10"/>
+  </g>
+
+  <g filter="url(#innerGlow)">
+    <path d="M402 318H580L642 380V622C642 652 618 676 588 676H436C406 676 382 652 382 622V338C382 327 391 318 402 318Z" fill="url(#paper)"/>
+    <path d="M402 318H580L642 380V622C642 652 618 676 588 676H436C406 676 382 652 382 622V338C382 327 391 318 402 318Z" stroke="#24364D" stroke-opacity="0.22" stroke-width="6"/>
+    <path d="M580 318V380H642" stroke="#F6FBFF" stroke-opacity="0.85" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+
+  <rect x="430" y="430" width="166" height="22" rx="11" fill="#334A69" fill-opacity="0.86"/>
+  <rect x="430" y="494" width="182" height="22" rx="11" fill="#334A69" fill-opacity="0.82"/>
+  <rect x="430" y="558" width="162" height="22" rx="11" fill="#334A69" fill-opacity="0.78"/>
+
+  <ellipse cx="316" cy="222" rx="126" ry="64" fill="white" fill-opacity="0.22"/>
+  <ellipse cx="770" cy="796" rx="162" ry="82" fill="#7EC8FF" fill-opacity="0.14"/>
+</svg>

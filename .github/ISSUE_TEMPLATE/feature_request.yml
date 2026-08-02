@@ -1,0 +1,50 @@
+name: Feature Request
+description: Schlage eine neue Funktion oder Erweiterung für Notary vor.
+title: "[Feature]: "
+labels:
+  - enhancement
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Nutze dieses Template für neue Funktionen, größere Erweiterungen oder Architekturvorhaben.
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problemstellung
+      description: Welches Problem soll gelöst werden?
+      placeholder: Aus Anwender-, Admin- oder Transporter-Sicht fehlt aktuell ...
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Lösungsvorschlag
+      description: Wie sollte die Funktion idealerweise aussehen?
+    validations:
+      required: true
+  - type: textarea
+    id: scope
+    attributes:
+      label: Scope / Auswirkungen
+      description: Welche Komponenten sind betroffen, z. B. Runner, Proof, Transporter, GUI, MDM, Jamf?
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Akzeptanzkriterien
+      description: Woran erkennen wir, dass das Thema erledigt ist?
+      placeholder: |
+        - ...
+        - ...
+    validations:
+      required: true
+  - type: dropdown
+    id: priority
+    attributes:
+      label: Priorität
+      options:
+        - Hoch
+        - Mittel
+        - Niedrig
+    validations:
+      required: true
