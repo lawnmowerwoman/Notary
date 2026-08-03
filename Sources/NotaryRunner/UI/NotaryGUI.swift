@@ -538,8 +538,12 @@ private final class NotaryReportWindowDelegate: NSObject, NSApplicationDelegate,
         self.detailsCard = detailsSection.container
         self.detailView = detailsSection.textView
 
-        let footerField = NSTextField(labelWithString: "The GUI reacts to report changes and stays read-only by design.")
+        let footerField = NSTextField(labelWithString: "")
         footerField.textColor = .secondaryLabelColor
+        footerField.font = NSFont.systemFont(ofSize: 13)
+        footerField.maximumNumberOfLines = 0
+        footerField.lineBreakMode = .byWordWrapping
+        footerField.usesSingleLineMode = false
         footerField.autoresizingMask = [.maxXMargin, .minYMargin]
         contentView.addSubview(footerField)
         self.footerField = footerField
@@ -624,6 +628,7 @@ private final class NotaryReportWindowDelegate: NSObject, NSApplicationDelegate,
 
                 It reads a sanitized public report and does not access the protected internal state.
                 """
+                footerField?.stringValue = formatAppTokenFooter(nil)
                 return
             }
 
@@ -639,6 +644,7 @@ private final class NotaryReportWindowDelegate: NSObject, NSApplicationDelegate,
             serialMetric?.value = report.serialNumber ?? "n/a"
             modelMetric?.value = report.hardwareModel ?? "n/a"
             managementMetric?.value = formattedManagementValue(report)
+            footerField?.stringValue = formatAppTokenFooter(report)
             issuesView?.string = formatIssuesForDisplay(report.issuesValue)
             detailView?.string = """
             \(formatProofSummary(report))
@@ -670,6 +676,7 @@ private final class NotaryReportWindowDelegate: NSObject, NSApplicationDelegate,
             managementMetric?.value = "Unknown"
             issuesView?.string = "Failed to load report."
             detailView?.string = "\(error)"
+            footerField?.stringValue = formatAppTokenFooter(nil)
         }
     }
 
@@ -867,7 +874,7 @@ private final class NotaryReportWindowDelegate: NSObject, NSApplicationDelegate,
         let bounds = contentView.bounds
         let margin: CGFloat = 28
         let interSection: CGFloat = 22
-        let footerHeight: CGFloat = 40
+        let footerHeight: CGFloat = 72
         let buttonWidth: CGFloat = 110
         let buttonHeight: CGFloat = 34
         let buttonGap: CGFloat = 12
@@ -878,7 +885,8 @@ private final class NotaryReportWindowDelegate: NSObject, NSApplicationDelegate,
         refreshButton?.frame = NSRect(x: closeX - buttonGap - buttonWidth, y: margin, width: buttonWidth, height: buttonHeight)
         let aboutX = closeX - (buttonGap * 2) - (buttonWidth * 2)
         aboutButton?.frame = NSRect(x: aboutX, y: margin, width: buttonWidth, height: buttonHeight)
-        footerField?.frame = NSRect(x: margin, y: margin + 6, width: max(280, aboutButton?.frame.minX ?? bounds.width - margin - 280), height: 24)
+        let footerRight = (aboutButton?.frame.minX ?? bounds.width - margin) - 16
+        footerField?.frame = NSRect(x: margin, y: margin, width: max(280, footerRight - margin), height: footerHeight)
 
         let headerY = bounds.height - margin - headerHeight
         headerCard?.frame = NSRect(x: margin, y: headerY, width: bounds.width - (margin * 2), height: headerHeight)
@@ -996,6 +1004,21 @@ private final class NotaryReportWindowDelegate: NSObject, NSApplicationDelegate,
             return "\(host) (\(id))"
         }
         return host
+    }
+
+    private func formatAppTokenFooter(_ report: NotaryPublicReport?) -> String {
+        guard
+            let report,
+            let customer = report.appTokenCustomerName?.trimmingCharacters(in: .whitespacesAndNewlines),
+            !customer.isEmpty
+        else {
+            return "App Token: Not available\nFeatures: None   Valid until: n/a"
+        }
+
+        let features = report.appTokenFeatures.contains("transporter") ? "Transport" : "None"
+        let validUntil = report.appTokenValidUntil?.trimmingCharacters(in: .whitespacesAndNewlines)
+        let validUntilText = validUntil?.isEmpty == false ? validUntil! : "n/a"
+        return "App Token: \(customer)\nFeatures: \(features)   Valid until: \(validUntilText)"
     }
 
     private func formatIssuesForDisplay(_ issues: String) -> String {

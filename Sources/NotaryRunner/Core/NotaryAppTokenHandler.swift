@@ -33,8 +33,10 @@ package enum NotaryAppTokenHandler {
         switch diagnostics.status {
         case .valid:
             let customer = diagnostics.payload?.customerName ?? "unknown customer"
+            let activationCode = diagnostics.payload?.activationCode ?? "unknown"
+            let validUntil = diagnostics.payload?.validUntil ?? "unknown"
             let features = diagnostics.recognizedFeatures.isEmpty ? "none" : diagnostics.recognizedFeatures.joined(separator: ", ")
-            logger.info("App Token valid: source=\(authorization.sourceDescription), customer=\(customer), features=\(features)")
+            logger.info("App Token valid: source=\(authorization.sourceDescription), customer=\(customer), activationCode=\(activationCode), validUntil=\(validUntil), features=\(features)")
             if !diagnostics.unknownFeatures.isEmpty {
                 logger.warn("App Token contains unknown features: \(diagnostics.unknownFeatures.joined(separator: ", "))")
             }

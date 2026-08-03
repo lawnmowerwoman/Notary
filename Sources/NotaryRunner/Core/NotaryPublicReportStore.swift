@@ -20,6 +20,19 @@ package struct NotaryPublicReport: Codable {
     package let hardwareModel: String?
     package let managementHost: String?
     package let managementComputerID: Int?
+    package let appTokenCustomerName: String?
+    package let appTokenActivationCode: String?
+    package let appTokenValidUntil: String?
+    package let appTokenFeatures: [String]
+
+    enum CodingKeys: String, CodingKey {
+        case generatedAt, lastRunAt, lastTransportUpdateAt
+        case runnerStatus, issuesValue, complianceValue
+        case passedCount, failedCount, unknownCount, timedOutCount, skippedCount, compliancePercent
+        case marketingVersion, versionLabel
+        case serialNumber, hardwareModel, managementHost, managementComputerID
+        case appTokenCustomerName, appTokenActivationCode, appTokenValidUntil, appTokenFeatures
+    }
 
     package init(
         generatedAt: Date,
@@ -39,7 +52,11 @@ package struct NotaryPublicReport: Codable {
         serialNumber: String?,
         hardwareModel: String?,
         managementHost: String?,
-        managementComputerID: Int?
+        managementComputerID: Int?,
+        appTokenCustomerName: String? = nil,
+        appTokenActivationCode: String? = nil,
+        appTokenValidUntil: String? = nil,
+        appTokenFeatures: [String] = []
     ) {
         self.generatedAt = generatedAt
         self.lastRunAt = lastRunAt
@@ -59,6 +76,36 @@ package struct NotaryPublicReport: Codable {
         self.hardwareModel = hardwareModel
         self.managementHost = managementHost
         self.managementComputerID = managementComputerID
+        self.appTokenCustomerName = appTokenCustomerName
+        self.appTokenActivationCode = appTokenActivationCode
+        self.appTokenValidUntil = appTokenValidUntil
+        self.appTokenFeatures = appTokenFeatures
+    }
+
+    package init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        generatedAt = try container.decode(Date.self, forKey: .generatedAt)
+        lastRunAt = try container.decodeIfPresent(Date.self, forKey: .lastRunAt)
+        lastTransportUpdateAt = try container.decodeIfPresent(Date.self, forKey: .lastTransportUpdateAt)
+        runnerStatus = try container.decode(String.self, forKey: .runnerStatus)
+        issuesValue = try container.decode(String.self, forKey: .issuesValue)
+        complianceValue = try container.decode(String.self, forKey: .complianceValue)
+        passedCount = try container.decodeIfPresent(Int.self, forKey: .passedCount)
+        failedCount = try container.decodeIfPresent(Int.self, forKey: .failedCount)
+        unknownCount = try container.decodeIfPresent(Int.self, forKey: .unknownCount)
+        timedOutCount = try container.decodeIfPresent(Int.self, forKey: .timedOutCount)
+        skippedCount = try container.decodeIfPresent(Int.self, forKey: .skippedCount)
+        compliancePercent = try container.decodeIfPresent(Int.self, forKey: .compliancePercent)
+        marketingVersion = try container.decode(String.self, forKey: .marketingVersion)
+        versionLabel = try container.decode(String.self, forKey: .versionLabel)
+        serialNumber = try container.decodeIfPresent(String.self, forKey: .serialNumber)
+        hardwareModel = try container.decodeIfPresent(String.self, forKey: .hardwareModel)
+        managementHost = try container.decodeIfPresent(String.self, forKey: .managementHost)
+        managementComputerID = try container.decodeIfPresent(Int.self, forKey: .managementComputerID)
+        appTokenCustomerName = try container.decodeIfPresent(String.self, forKey: .appTokenCustomerName)
+        appTokenActivationCode = try container.decodeIfPresent(String.self, forKey: .appTokenActivationCode)
+        appTokenValidUntil = try container.decodeIfPresent(String.self, forKey: .appTokenValidUntil)
+        appTokenFeatures = try container.decodeIfPresent([String].self, forKey: .appTokenFeatures) ?? []
     }
 }
 

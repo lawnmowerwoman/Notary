@@ -250,7 +250,11 @@ enum NotaryCycleExecutor {
                 serialNumber: serial,
                 hardwareModel: hardwareModel,
                 managementHost: jamfProURL?.host,
-                managementComputerID: state.computerID
+                managementComputerID: state.computerID,
+                appTokenCustomerName: appTokenAuthorization.diagnostics.status == .valid ? appTokenAuthorization.diagnostics.payload?.customerName : nil,
+                appTokenActivationCode: appTokenAuthorization.diagnostics.status == .valid ? appTokenAuthorization.diagnostics.payload?.activationCode : nil,
+                appTokenValidUntil: appTokenAuthorization.diagnostics.status == .valid ? appTokenAuthorization.diagnostics.payload?.validUntil : nil,
+                appTokenFeatures: appTokenAuthorization.diagnostics.status == .valid ? appTokenAuthorization.diagnostics.recognizedFeatures : []
             )
             try NotaryPublicReportStore().save(publicReport)
         } catch {

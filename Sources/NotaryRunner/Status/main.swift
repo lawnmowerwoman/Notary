@@ -80,6 +80,7 @@ private final class NotaryStatusAppDelegate: NSObject, NSApplicationDelegate, NS
     private var complianceRefreshTimer: Timer?
     private var telemetryTimer: Timer?
     private var latestState: NotaryPublicComplianceState = .unavailable
+    private var latestReport: NotaryPublicReport?
     private var latestTelemetry: TelemetrySnapshot?
     private weak var headerView: NotaryStatusHeaderView?
     private weak var telemetryView: NotaryTelemetryTextView?
@@ -146,10 +147,12 @@ private final class NotaryStatusAppDelegate: NSObject, NSApplicationDelegate, NS
 
     private func refreshCompliance() {
         let report = (try? reportStore.load()) ?? nil
+        latestReport = report
         latestState = NotaryPublicComplianceState(report: report)
         statusItem.button?.image = statusIcon(for: latestState)
         statusItem.button?.toolTip = "Notary: \(latestState.displayTitle)"
         headerView?.state = latestState
+        versionView?.text = versionDisplayText()
     }
 
     private func refreshTelemetry() {
@@ -160,7 +163,7 @@ private final class NotaryStatusAppDelegate: NSObject, NSApplicationDelegate, NS
     private func updateVisibleViews() {
         headerView?.state = latestState
         telemetryView?.lines = telemetryLines(from: latestTelemetry)
-        versionView?.text = bundleVersion.displayText
+        versionView?.text = versionDisplayText()
     }
 
     private func rebuildMenu() {
@@ -173,7 +176,7 @@ private final class NotaryStatusAppDelegate: NSObject, NSApplicationDelegate, NS
         menu.addItem(headerItem)
         headerView = header
 
-        let version = NotaryVersionTextView(text: bundleVersion.displayText)
+        let version = NotaryVersionTextView(text: versionDisplayText())
         let versionItem = NSMenuItem()
         versionItem.view = version
         menu.addItem(versionItem)
@@ -219,6 +222,13 @@ private final class NotaryStatusAppDelegate: NSObject, NSApplicationDelegate, NS
         }
 
         return [cpuLine, networkLine]
+    }
+
+    private func versionDisplayText() -> String {
+        if latestReport?.appTokenFeatures.contains("transporter") == true {
+            return "\(bundleVersion.displayText) • Transport"
+        }
+        return bundleVersion.displayText
     }
 
     private func formatPercent(_ fraction: Double) -> String {

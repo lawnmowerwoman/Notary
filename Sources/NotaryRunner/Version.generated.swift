@@ -4,9 +4,9 @@ import Foundation
 package enum NotaryVersion {
   package static let majorIndex: Int = 1         // 0=v1, 1=v2, ...
   package static let minorLetter: String = "B"  // A=.0, B=.1, ...
-  package static let build: Int = 19                    // local counter
+  package static let build: Int = 20                    // local counter
   package static let channel: String = "h"           // m..a or "" for release
 
   package static let marketingVersion: String = "2.1" // e.g. 2.0
-  package static let label: String = "1B19h"                          // e.g. 1A42m
+  package static let label: String = "1B20h"                          // e.g. 1A42m
 }
