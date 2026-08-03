@@ -4,7 +4,10 @@ Alle wesentlichen Änderungen an Notary sollen hier in knapper Form dokumentiert
 
 ## Unreleased
 
-- Beta-Kandidat `2.1 (1B19h)` erzeugt: Confidential Release Build, signiert, notarisiert und gestapled. SHA-256: `59381a1172b8a136850da6ffd2eab1e2858c325d436dfdf89d9977c8a9935307`.
+- Public-Beta-Kandidat `2.1 (1B20h)` veröffentlicht: Confidential Release Build, signiert, notarisiert und gestapled. SHA-256: `3ba1753ce8edd628b45d194b4022f3cd3c03216c5260a8c7b0d951f7e9a090b8`.
+- App-Token-UX finalisiert: Generator speichert `.atoken`, schlägt Customer-Namen als Dateinamen vor und filtert den Öffnen-Dialog auf App Token.
+- Token-Status in Menubar und Report-GUI sichtbar gemacht; gültige Transport-Capability erscheint als `Transport`.
+- Erfolgreiche Tokenvalidierung protokolliert jetzt zusätzlich Activation Code und Ablaufdatum.
 - App-Token-Persistenz korrigiert: Der Runner bewahrt den extern verwalteten `apptoken`-Eintrag in `/var/db/notary.plist`, wenn er seinen Laufzeit-State speichert.
 - Public/Confidential Transport-Architektur getrennt: öffentliche Builds verwenden einen sicheren Dummy ohne Netzwerkzugriff; interne Builds binden den echten Transporter über denselben stabilen Transport-Vertrag ein.
 - `.local`-Konvention eingeführt: lokale/vertrauliche Quellen und Dokumentation liegen in `*.local/` und werden nicht Teil des öffentlichen Repositorys.
