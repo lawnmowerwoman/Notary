@@ -9,6 +9,7 @@ readonly GITHUB_API_URL="https://api.github.com/repos/lawnmowerwoman/Notary/rele
 readonly TARGET_VOLUME="/"
 readonly EXPECTED_TEAM_ID="KP5T66DWT2"
 readonly INSTALLED_APP_INFO="/Applications/Notary.app/Contents/Info.plist"
+readonly INSTALLER_VERSION="1.0.0"
 
 tmp_dir=""
 pkg_path=""
@@ -42,13 +43,23 @@ require_root() {
 
 usage() {
     cat <<'EOF'
-Usage: installNotary.sh [--beta]
+Usage: installNotary.sh [--beta] [--version]
 
 Options:
   --beta    Allow beta packages whose build number ends with a letter.
+  --version Show installer version.
   --help    Show this help.
 
 Jamf positional parameters are ignored.
+EOF
+}
+
+print_version() {
+    cat <<EOF
+Notary Installer
+Version ${INSTALLER_VERSION}
+
+Copyright © Ministry of Code
 EOF
 }
 
@@ -59,6 +70,10 @@ parse_arguments() {
                 ;;
             --beta)
                 allow_beta=true
+                ;;
+            --version)
+                print_version
+                exit 0
                 ;;
             --help|-h)
                 usage
@@ -80,6 +95,11 @@ create_temp_dir() {
 
 fetch_releases() {
     curl --fail --silent --show-error --location \
+        --retry 3 \
+        --retry-delay 5 \
+        --retry-all-errors \
+        --connect-timeout 15 \
+        --max-time 300 \
         --header "Accept: application/vnd.github+json" \
         --header "X-GitHub-Api-Version: 2022-11-28" \
         "${GITHUB_API_URL}"
@@ -306,9 +326,14 @@ download_pkg() {
 
     pkg_path="${tmp_dir}/${file_name}"
 
-    curl --fail --location --show-error \
+    curl --fail --silent --show-error --location \
+        --retry 3 \
+        --retry-delay 5 \
+        --retry-all-errors \
+        --connect-timeout 15 \
+        --max-time 300 \
         --output "${pkg_path}" \
-        "${download_url}" || fail 3 "Download failed."
+        "${download_url}" || fail 3 "Unable to download package after 3 attempts."
 
     [[ -s "${pkg_path}" ]] || fail 4 "Downloaded package is missing or empty."
 }
@@ -342,6 +367,8 @@ main() {
     parse_arguments "$@"
     create_temp_dir
 
+    log "Notary Installer ${INSTALLER_VERSION}"
+    log ""
     log "Checking GitHub releases..."
     release_json="$(fetch_releases)" || fail 13 "Could not retrieve GitHub releases."
     releases_file="${tmp_dir}/releases.json"
@@ -369,8 +396,9 @@ main() {
         exit 0
     fi
 
-    log "Downloading..."
+    log "Downloading Notary $(display_descriptor "${candidate_descriptor}")..."
     download_pkg "${download_url}"
+    log "Download completed."
 
     validate_pkg
 
