@@ -47,12 +47,16 @@ Usage: installNotary.sh [--beta]
 Options:
   --beta    Allow beta packages whose build number ends with a letter.
   --help    Show this help.
+
+Jamf positional parameters are ignored.
 EOF
 }
 
 parse_arguments() {
     while [[ $# -gt 0 ]]; do
         case "$1" in
+            "")
+                ;;
             --beta)
                 allow_beta=true
                 ;;
@@ -60,8 +64,10 @@ parse_arguments() {
                 usage
                 exit 0
                 ;;
-            *)
+            --*)
                 fail 20 "Unknown argument: $1"
+                ;;
+            *)
                 ;;
         esac
         shift
