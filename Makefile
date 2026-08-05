@@ -9,7 +9,7 @@ APP_BUNDLE_ID   := de.twocent.notary.app
 SERVICE_ID      := de.twocent.notary.service
 STATUS_ID       := de.twocent.notary.status
 -include .version/version.mk
-VERSION_FROM_FILES = $(shell major=$$(cat .version/major_index 2>/dev/null || echo 1); minor=$$(cat .version/minor_letter 2>/dev/null || echo A); minor_num=$$(printf '%s\n' "$$minor" | awk '{ print index("ABCDEFGHIJKLMNOPQRSTUVWXYZ", $$0) - 1 }'); if [ "$$minor_num" -lt 0 ]; then minor_num=0; fi; printf '%s.%s\n' "$$((major + 1))" "$$minor_num")
+VERSION_FROM_FILES = $(shell major=$$(cat .version/major_index 2>/dev/null || echo 1); minor=$$(cat .version/minor_letter 2>/dev/null || echo A); patch=$$(cat .version/patch 2>/dev/null || echo 0); minor_num=$$(printf '%s\n' "$$minor" | awk '{ print index("ABCDEFGHIJKLMNOPQRSTUVWXYZ", $$0) - 1 }'); if [ "$$minor_num" -lt 0 ]; then minor_num=0; fi; if [ "$$patch" = "0" ]; then printf '%s.%s\n' "$$((major + 1))" "$$minor_num"; else printf '%s.%s.%s\n' "$$((major + 1))" "$$minor_num" "$$patch"; fi)
 BUILD_LABEL_FROM_FILES = $(shell major=$$(cat .version/major_index 2>/dev/null || echo 1); minor=$$(cat .version/minor_letter 2>/dev/null || echo A); build=$$(cat .version/build_number 2>/dev/null || true); channel=$$(cat .version/channel 2>/dev/null || true); if [ -n "$$build" ]; then printf '%s%s%s%s\n' "$$major" "$$minor" "$$build" "$$channel"; fi)
 VERSION         ?= $(VERSION_FROM_FILES)
 BUILD_LABEL     = $(or $(BUILD_LABEL_FROM_FILES),$(shell sed -n 's/^BUILD_LABEL := //p' .version/version.mk 2>/dev/null))

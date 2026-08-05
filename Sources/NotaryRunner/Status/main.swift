@@ -86,8 +86,15 @@ private final class NotaryStatusAppDelegate: NSObject, NSApplicationDelegate, NS
     private weak var telemetryView: NotaryTelemetryTextView?
     private weak var versionView: NotaryVersionTextView?
     private var userRequestedQuit = false
+    private var systemRequestedTermination = false
 
     func applicationDidFinishLaunching(_ notification: Notification) {
+        NSWorkspace.shared.notificationCenter.addObserver(
+            self,
+            selector: #selector(systemWillPowerOff),
+            name: NSWorkspace.willPowerOffNotification,
+            object: nil
+        )
         configureStatusItem()
         refreshCompliance()
         rebuildMenu()
@@ -95,12 +102,13 @@ private final class NotaryStatusAppDelegate: NSObject, NSApplicationDelegate, NS
     }
 
     func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
-        return userRequestedQuit ? .terminateNow : .terminateCancel
+        return (userRequestedQuit || systemRequestedTermination) ? .terminateNow : .terminateCancel
     }
 
     func applicationWillTerminate(_ notification: Notification) {
         stopTelemetryTimer()
         complianceRefreshTimer?.invalidate()
+        NSWorkspace.shared.notificationCenter.removeObserver(self)
         NSStatusBar.system.removeStatusItem(statusItem)
     }
 
@@ -263,6 +271,10 @@ private final class NotaryStatusAppDelegate: NSObject, NSApplicationDelegate, NS
     @objc private func quit() {
         userRequestedQuit = true
         NSApp.terminate(nil)
+    }
+
+    @objc private func systemWillPowerOff(_ notification: Notification) {
+        systemRequestedTermination = true
     }
 
     private func runningNotaryApp() -> NSRunningApplication? {

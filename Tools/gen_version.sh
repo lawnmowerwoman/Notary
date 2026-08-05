@@ -11,6 +11,8 @@ OUT_SWIFT="${2:?output swift path missing}"
 MAJOR_INDEX_FILE="${VERSION_DIR}/major_index"
 # A=.0, B=.1, C=.2 ...
 MINOR_LETTER_FILE="${VERSION_DIR}/minor_letter"
+# Optional patch version for rapid fixes.
+PATCH_FILE="${VERSION_DIR}/patch"
 # Channel/Seed letter: m..a or empty for release
 CHANNEL_FILE="${VERSION_DIR}/channel"
 
@@ -20,11 +22,13 @@ BUILD_FILE="${VERSION_DIR}/build_number"
 # Defaults (first run)
 [[ -f "$MAJOR_INDEX_FILE" ]] || echo "1" > "$MAJOR_INDEX_FILE"     # jump to v2
 [[ -f "$MINOR_LETTER_FILE" ]] || echo "A" > "$MINOR_LETTER_FILE"
+[[ -f "$PATCH_FILE" ]] || echo "0" > "$PATCH_FILE"
 [[ -f "$CHANNEL_FILE" ]] || echo "m" > "$CHANNEL_FILE"
 [[ -f "$BUILD_FILE" ]] || echo "0" > "$BUILD_FILE"
 
 MAJOR_INDEX="$(cat "$MAJOR_INDEX_FILE" | tr -d '[:space:]')"
 MINOR_LETTER="$(cat "$MINOR_LETTER_FILE" | tr -d '[:space:]')"
+PATCH="$(cat "$PATCH_FILE" | tr -d '[:space:]')"
 CHANNEL="$(cat "$CHANNEL_FILE" | tr -d '[:space:]')"
 BUILD="$(cat "$BUILD_FILE" | tr -d '[:space:]')"
 
@@ -42,7 +46,11 @@ if [[ $MINOR_NUM -lt 0 ]]; then MINOR_NUM=0; fi
 
 # Marketing version: (major_index+1).minor_num
 MARKETING_MAJOR=$((MAJOR_INDEX + 1))
-MARKETING_VERSION="${MARKETING_MAJOR}.${MINOR_NUM}"
+if [[ "${PATCH}" == "0" ]]; then
+  MARKETING_VERSION="${MARKETING_MAJOR}.${MINOR_NUM}"
+else
+  MARKETING_VERSION="${MARKETING_MAJOR}.${MINOR_NUM}.${PATCH}"
+fi
 
 # Label: 1A42m (channel may be empty)
 LABEL="${MAJOR_INDEX}${MINOR_LETTER}${BUILD}${CHANNEL}"
@@ -55,6 +63,7 @@ import Foundation
 package enum NotaryVersion {
   package static let majorIndex: Int = ${MAJOR_INDEX}         // 0=v1, 1=v2, ...
   package static let minorLetter: String = "${MINOR_LETTER}"  // A=.0, B=.1, ...
+  package static let patch: Int = ${PATCH}                    // rapid-fix patch version
   package static let build: Int = ${BUILD}                    // local counter
   package static let channel: String = "${CHANNEL}"           // m..a or "" for release
 
