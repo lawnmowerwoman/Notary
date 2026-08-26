@@ -13,6 +13,7 @@ struct AppTokenReferenceTests {
         try expiredToken()
         try futureToken()
         try wrongProduct()
+        try moduleCapabilitiesAreRecognized()
         try unknownFeatureDoesNotInvalidateToken()
         try unknownKeyID()
         try modifiedPayloadFailsSignature()
@@ -59,10 +60,19 @@ struct AppTokenReferenceTests {
         expect(validate(token).status == .wrongProduct, "wrong product")
     }
 
+    static func moduleCapabilitiesAreRecognized() throws {
+        let diagnostics = try validate(makeToken(features: AppTokenDefaults.notaryFeatures))
+        expect(diagnostics.status == .valid, "module feature token valid")
+        expect(diagnostics.recognizedFeatures == AppTokenDefaults.notaryFeatures, "all module features recognized")
+        expect(diagnostics.capabilities.contains(AppTokenDefaults.transporterFeature), "transport capability")
+        expect(diagnostics.capabilities.contains(AppTokenDefaults.reporterFeature), "reporter capability")
+        expect(diagnostics.capabilities.contains(AppTokenDefaults.configuratorFeature), "configurator capability")
+    }
+
     static func unknownFeatureDoesNotInvalidateToken() throws {
-        let diagnostics = try validate(makeToken(features: ["transporter", "centralManagement"]))
+        let diagnostics = try validate(makeToken(features: [AppTokenDefaults.transporterFeature, "centralManagement"]))
         expect(diagnostics.status == .valid, "unknown feature token still valid")
-        expect(diagnostics.recognizedFeatures == ["transporter"], "recognized feature retained")
+        expect(diagnostics.recognizedFeatures == [AppTokenDefaults.transporterFeature], "recognized feature retained")
         expect(diagnostics.unknownFeatures == ["centralManagement"], "unknown feature listed")
         expect(diagnostics.capabilities.contains("transporter"), "recognized capability retained")
     }
@@ -194,7 +204,7 @@ struct AppTokenReferenceTests {
         return AppTokenValidator(
             publicKeys: PublicKeyRegistry(rawKeys: [keyId: publicKey]),
             productPolicy: ProductPolicy(acceptedProductIds: ["NOTX", "NOT2"], acceptedIssuers: ["twocent-notary"]),
-            featureRegistry: FeatureRegistry(recognizedFeatures: ["transporter"]),
+            featureRegistry: AppTokenDefaults.notaryFeatureRegistry,
             now: now
         ).validate(token, source: source)
     }

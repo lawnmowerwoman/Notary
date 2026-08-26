@@ -6,6 +6,8 @@ import PackageDescription
 let environment = Context.environment
 let requestedTransportImplementation = environment["NOTARY_TRANSPORT_IMPLEMENTATION"] ?? "public"
 let confidentialTransportPath = environment["NOTARY_CONFIDENTIAL_TRANSPORT_PATH"] ?? ""
+let requestedReporterImplementation = environment["NOTARY_REPORTER_IMPLEMENTATION"] ?? "public"
+let confidentialReporterPath = environment["NOTARY_CONFIDENTIAL_REPORTER_PATH"] ?? ""
 let localAppTokenGeneratorPath = environment["NOTARY_LOCAL_APP_TOKEN_GENERATOR_PATH"] ?? ""
 
 let usesConfidentialTransport: Bool
@@ -39,6 +41,46 @@ default:
 }
 
 print("Transport implementation: \(usesConfidentialTransport ? "confidential" : "public dummy")")
+
+let usesConfidentialReporter: Bool
+let reporterTargets: [Target]
+let reporterDependency: Target.Dependency = "NotaryReporterImplementation"
+
+switch requestedReporterImplementation {
+case "public", "dummy":
+  usesConfidentialReporter = false
+  reporterTargets = [
+    .target(
+      name: "NotaryReporterImplementation",
+      dependencies: [
+        "NotaryCore"
+      ],
+      path: "Sources/NotaryReporterImplementation"
+    )
+  ]
+case "confidential":
+  guard !confidentialReporterPath.isEmpty else {
+    fatalError("NOTARY_REPORTER_IMPLEMENTATION=confidential requires NOTARY_CONFIDENTIAL_REPORTER_PATH")
+  }
+  usesConfidentialReporter = true
+  reporterTargets = [
+    .target(
+      name: "NotaryReporterImplementation",
+      dependencies: [
+        "NotaryCore"
+      ],
+      path: confidentialReporterPath
+    )
+  ]
+default:
+  fatalError("Unsupported NOTARY_REPORTER_IMPLEMENTATION value: \(requestedReporterImplementation)")
+}
+
+print("Reporter implementation: \(usesConfidentialReporter ? "confidential" : "public dummy")")
+
+let notaryCoreSwiftSettings: [SwiftSetting] = usesConfidentialReporter ? [
+  .define("NOTARY_CONFIDENTIAL_REPORTER")
+] : []
 
 let usesLocalAppTokenGenerator = !localAppTokenGeneratorPath.isEmpty
 if usesLocalAppTokenGenerator {
@@ -141,7 +183,8 @@ let package = Package(
         "Core",
         "GeneratedKeys.swift",
         "Version.generated.swift"
-      ]
+      ],
+      swiftSettings: notaryCoreSwiftSettings
     ),
     .executableTarget(
       name: "notary",
@@ -155,7 +198,8 @@ let package = Package(
     .executableTarget(
       name: "NotaryApp",
       dependencies: [
-        "NotaryCore"
+        "NotaryCore",
+        reporterDependency
       ],
       path: "Sources/NotaryRunner/UI"
     ),
@@ -183,7 +227,7 @@ let package = Package(
       ],
       path: "Tests/TransportTests"
     )
-  ] + transportTargets + appTokenGeneratorTargets
+  ] + transportTargets + reporterTargets + appTokenGeneratorTargets
 )
 
 package.products.append(contentsOf: appTokenGeneratorProducts)

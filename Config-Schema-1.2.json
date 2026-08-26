@@ -37,8 +37,8 @@
     "apptoken": {
       "type": "string",
       "title": "App Token",
-      "description": "Optional signed App Token used by Notary to authorize premium integration features such as Transporter.",
-      "propertyOrder": 18
+      "description": "Optional signed App Token used by Notary to authorize licensed modules such as Transport, Reporter and Configurator.",
+      "propertyOrder": 999
     },
 
     "CoreSecurity": {

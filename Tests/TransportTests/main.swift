@@ -10,6 +10,7 @@ enum TransportRegressionTests {
         await transportAvailabilityMatchesBuildMode()
         capabilityGateBlocksMissingTransporterFeature()
         capabilityGateAllowsTransporterFeature()
+        reporterAndConfiguratorCapabilitiesAreIndependent()
         securePlistStorePreservesAppToken()
         print("Transport regression tests passed")
     }
@@ -48,6 +49,20 @@ enum TransportRegressionTests {
         let diagnostics = TokenDiagnostics(status: .valid, capabilities: [AppTokenDefaults.feature])
         let authorization = NotaryAppTokenAuthorization(diagnostics: diagnostics)
         expect(authorization.allowsTransporter == true, "transporter capability allows transport")
+    }
+
+    static func reporterAndConfiguratorCapabilitiesAreIndependent() {
+        let diagnostics = TokenDiagnostics(
+            status: .valid,
+            capabilities: [
+                AppTokenDefaults.reporterFeature,
+                AppTokenDefaults.configuratorFeature,
+            ]
+        )
+        let authorization = NotaryAppTokenAuthorization(diagnostics: diagnostics)
+        expect(authorization.allowsTransporter == false, "reporter/configurator do not imply transport")
+        expect(authorization.allowsReporter == true, "reporter capability allows reporter")
+        expect(authorization.allowsConfigurator == true, "configurator capability allows configurator")
     }
 
     static func securePlistStorePreservesAppToken() {

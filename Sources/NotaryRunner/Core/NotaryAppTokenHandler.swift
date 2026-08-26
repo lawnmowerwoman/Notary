@@ -9,7 +9,15 @@ package struct NotaryAppTokenAuthorization {
     }
 
     package var allowsTransporter: Bool {
-        diagnostics.status == .valid && diagnostics.capabilities.contains(AppTokenDefaults.feature)
+        diagnostics.status == .valid && diagnostics.capabilities.contains(NotaryTokenFeature.transport)
+    }
+
+    package var allowsReporter: Bool {
+        diagnostics.status == .valid && diagnostics.capabilities.contains(NotaryTokenFeature.reporter)
+    }
+
+    package var allowsConfigurator: Bool {
+        diagnostics.status == .valid && diagnostics.capabilities.contains(NotaryTokenFeature.configurator)
     }
 
     package var sourceDescription: String {
@@ -41,9 +49,9 @@ package enum NotaryAppTokenHandler {
                 logger.warn("App Token contains unknown features: \(diagnostics.unknownFeatures.joined(separator: ", "))")
             }
         case .missing:
-            logger.warn("App Token missing; optional Transporter capability is disabled.")
+            logger.warn("App Token missing; optional module capabilities are disabled.")
         default:
-            logger.warn("App Token invalid: source=\(authorization.sourceDescription), status=\(authorization.statusDescription); optional Transporter capability is disabled.")
+            logger.warn("App Token invalid: source=\(authorization.sourceDescription), status=\(authorization.statusDescription); optional module capabilities are disabled.")
         }
     }
 

@@ -89,6 +89,7 @@ private final class NotaryStatusAppDelegate: NSObject, NSApplicationDelegate, NS
     private var systemRequestedTermination = false
 
     func applicationDidFinishLaunching(_ notification: Notification) {
+        installReportURLHandler()
         NSWorkspace.shared.notificationCenter.addObserver(
             self,
             selector: #selector(systemWillPowerOff),
@@ -105,7 +106,16 @@ private final class NotaryStatusAppDelegate: NSObject, NSApplicationDelegate, NS
         return (userRequestedQuit || systemRequestedTermination) ? .terminateNow : .terminateCancel
     }
 
+    func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
+        openReport()
+        return false
+    }
+
     func applicationWillTerminate(_ notification: Notification) {
+        NSAppleEventManager.shared().removeEventHandler(
+            forEventClass: AEEventClass(kInternetEventClass),
+            andEventID: AEEventID(kAEGetURL)
+        )
         stopTelemetryTimer()
         complianceRefreshTimer?.invalidate()
         NSWorkspace.shared.notificationCenter.removeObserver(self)
@@ -233,7 +243,7 @@ private final class NotaryStatusAppDelegate: NSObject, NSApplicationDelegate, NS
     }
 
     private func versionDisplayText() -> String {
-        if latestReport?.appTokenFeatures.contains("transporter") == true {
+        if latestReport?.appTokenFeatures.contains(NotaryTokenFeature.transport) == true {
             return "\(bundleVersion.displayText) • Transport"
         }
         return bundleVersion.displayText
@@ -277,6 +287,28 @@ private final class NotaryStatusAppDelegate: NSObject, NSApplicationDelegate, NS
         systemRequestedTermination = true
     }
 
+    @objc private func handleGetURLEvent(_ event: NSAppleEventDescriptor, withReplyEvent replyEvent: NSAppleEventDescriptor) {
+        guard let urlString = event.paramDescriptor(forKeyword: keyDirectObject)?.stringValue,
+              let url = URL(string: urlString),
+              url.scheme?.lowercased() == "notary"
+        else {
+            return
+        }
+
+        if url.host?.lowercased() == "report" || url.path == "/report" {
+            openReport()
+        }
+    }
+
+    private func installReportURLHandler() {
+        NSAppleEventManager.shared().setEventHandler(
+            self,
+            andSelector: #selector(handleGetURLEvent(_:withReplyEvent:)),
+            forEventClass: AEEventClass(kInternetEventClass),
+            andEventID: AEEventID(kAEGetURL)
+        )
+    }
+
     private func runningNotaryApp() -> NSRunningApplication? {
         let executablePath = URL(fileURLWithPath: NotaryReportOpenRequest.appExecutablePath).standardizedFileURL.path
         return NSWorkspace.shared.runningApplications.first { app in
@@ -300,7 +332,7 @@ private final class NotaryStatusAppDelegate: NSObject, NSApplicationDelegate, NS
         do {
             try task.run()
         } catch {
-            NSLog("[NotaryStatus] Failed to launch Notary app executable: %@", String(describing: error))
+            NSLog("[NotaryStatus] Failed to launch Notary executable: %@", String(describing: error))
         }
     }
 }

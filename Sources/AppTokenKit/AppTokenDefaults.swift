@@ -3,7 +3,11 @@ import Foundation
 public enum AppTokenDefaults {
     public static let productId = "NOTX"
     public static let validUntil = "2027-12-31"
-    public static let feature = "transporter"
+    public static let transporterFeature = "transporter"
+    public static let reporterFeature = "reporter"
+    public static let configuratorFeature = "configurator"
+    public static let feature = transporterFeature
+    public static let notaryFeatures = [transporterFeature, reporterFeature, configuratorFeature]
     public static let issuer = "twocent-notary"
 
     public static var notaryProductPolicy: ProductPolicy {
@@ -11,7 +15,7 @@ public enum AppTokenDefaults {
     }
 
     public static var notaryFeatureRegistry: FeatureRegistry {
-        FeatureRegistry(recognizedFeatures: [feature])
+        FeatureRegistry(recognizedFeatures: Set(notaryFeatures))
     }
 
     public static func activationCode(productId: String = productId) -> String {
@@ -20,4 +24,3 @@ public enum AppTokenDefaults {
         return "\(productId)\(suffix)"
     }
 }
-

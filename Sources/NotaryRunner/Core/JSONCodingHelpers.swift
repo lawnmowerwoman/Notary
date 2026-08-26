@@ -1,12 +1,12 @@
 import Foundation
 
 /// Decodes an integer that may be represented as either a JSON number or a JSON string.
-struct IntOrString: Codable, Hashable, Sendable {
-    let value: Int
+package struct IntOrString: Codable, Hashable, Sendable {
+    package let value: Int
 
-    init(_ value: Int) { self.value = value }
+    package init(_ value: Int) { self.value = value }
 
-    init(from decoder: Decoder) throws {
+    package init(from decoder: Decoder) throws {
         let c = try decoder.singleValueContainer()
 
         if let i = try? c.decode(Int.self) {
@@ -25,7 +25,7 @@ struct IntOrString: Codable, Hashable, Sendable {
         )
     }
 
-    func encode(to encoder: Encoder) throws {
+    package func encode(to encoder: Encoder) throws {
         var c = encoder.singleValueContainer()
         try c.encode(value)
     }

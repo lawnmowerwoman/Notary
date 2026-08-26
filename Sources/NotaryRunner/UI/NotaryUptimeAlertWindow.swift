@@ -14,6 +14,16 @@ final class NotaryUptimeAlertWindowDelegate: NSObject, NSApplicationDelegate, NS
     }
 
     func applicationDidFinishLaunching(_ notification: Notification) {
+        openOrFocusWindow()
+    }
+
+    func openOrFocusWindow() {
+        if let window {
+            window.makeKeyAndOrderFront(nil)
+            ensureAppPresentation()
+            return
+        }
+
         let window = NSWindow(
             contentRect: NSRect(x: 0, y: 0, width: 620, height: 420),
             styleMask: [.titled, .closable, .miniaturizable],
@@ -23,6 +33,7 @@ final class NotaryUptimeAlertWindowDelegate: NSObject, NSApplicationDelegate, NS
         window.title = NotaryGUI.appName
         window.center()
         window.delegate = self
+        window.isRestorable = false
         window.level = .floating
         window.isReleasedWhenClosed = false
         window.minSize = NSSize(width: 560, height: 400)
@@ -89,6 +100,10 @@ final class NotaryUptimeAlertWindowDelegate: NSObject, NSApplicationDelegate, NS
     }
 
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool {
+        true
+    }
+
+    func applicationSupportsSecureRestorableState(_ app: NSApplication) -> Bool {
         true
     }
 

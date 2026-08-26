@@ -247,6 +247,7 @@ enum NotaryCycleExecutor {
                 compliancePercent: proof.compliancePercent,
                 marketingVersion: NotaryVersion.marketingVersion,
                 versionLabel: NotaryVersion.label,
+                osVersion: currentOSVersion(),
                 serialNumber: serial,
                 hardwareModel: hardwareModel,
                 managementHost: jamfProURL?.host,
@@ -309,5 +310,10 @@ enum NotaryCycleExecutor {
 
         logger.warn("[ManagedConfig] Managed profile values are still unavailable after 5 minutes; continuing with the current empty snapshot.")
         return false
+    }
+
+    private static func currentOSVersion() -> String {
+        let version = ProcessInfo.processInfo.operatingSystemVersion
+        return "macOS \(version.majorVersion).\(version.minorVersion).\(version.patchVersion)"
     }
 }

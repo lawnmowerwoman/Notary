@@ -16,6 +16,7 @@ package struct NotaryPublicReport: Codable {
     package let compliancePercent: Int?
     package let marketingVersion: String
     package let versionLabel: String
+    package let osVersion: String?
     package let serialNumber: String?
     package let hardwareModel: String?
     package let managementHost: String?
@@ -29,7 +30,7 @@ package struct NotaryPublicReport: Codable {
         case generatedAt, lastRunAt, lastTransportUpdateAt
         case runnerStatus, issuesValue, complianceValue
         case passedCount, failedCount, unknownCount, timedOutCount, skippedCount, compliancePercent
-        case marketingVersion, versionLabel
+        case marketingVersion, versionLabel, osVersion
         case serialNumber, hardwareModel, managementHost, managementComputerID
         case appTokenCustomerName, appTokenActivationCode, appTokenValidUntil, appTokenFeatures
     }
@@ -49,6 +50,7 @@ package struct NotaryPublicReport: Codable {
         compliancePercent: Int? = nil,
         marketingVersion: String,
         versionLabel: String,
+        osVersion: String? = nil,
         serialNumber: String?,
         hardwareModel: String?,
         managementHost: String?,
@@ -72,6 +74,7 @@ package struct NotaryPublicReport: Codable {
         self.compliancePercent = compliancePercent
         self.marketingVersion = marketingVersion
         self.versionLabel = versionLabel
+        self.osVersion = osVersion
         self.serialNumber = serialNumber
         self.hardwareModel = hardwareModel
         self.managementHost = managementHost
@@ -98,6 +101,7 @@ package struct NotaryPublicReport: Codable {
         compliancePercent = try container.decodeIfPresent(Int.self, forKey: .compliancePercent)
         marketingVersion = try container.decode(String.self, forKey: .marketingVersion)
         versionLabel = try container.decode(String.self, forKey: .versionLabel)
+        osVersion = try container.decodeIfPresent(String.self, forKey: .osVersion)
         serialNumber = try container.decodeIfPresent(String.self, forKey: .serialNumber)
         hardwareModel = try container.decodeIfPresent(String.self, forKey: .hardwareModel)
         managementHost = try container.decodeIfPresent(String.self, forKey: .managementHost)

@@ -2,49 +2,72 @@ import Foundation
 import AppKit
 import ApplicationServices
 import UniformTypeIdentifiers
+import Darwin
 import NotaryCore
+import NotaryReporterImplementation
 
 @MainActor
 enum NotaryGUI {
     static let appName = "Notary"
+    private static var retainedReportDelegate: NotaryReportWindowDelegate?
+    private static var retainedConfiguratorDelegate: NotaryConfiguratorWindowDelegate?
+    private static var retainedReporterDelegate: NotaryJamfReporterWindowDelegate?
+    private static var retainedPlaceholderDelegate: NotaryWindowDelegate?
     private static var retainedUptimeAlertDelegate: NotaryUptimeAlertWindowDelegate?
 
     static func showReportWindow(logger: HardenLogger) {
         let app = NSApplication.shared
-        let delegate = NotaryReportWindowDelegate(logger: logger, includeConfigurator: isCurrentUserAdmin())
+        let delegate = NotaryReportWindowDelegate(logger: logger, includeConfigurator: canOpenConfigurator())
+        retainedReportDelegate = delegate
 
-        promoteProcessToForegroundApp()
         app.setActivationPolicy(.regular)
         app.mainMenu = makeMainMenu(delegate: delegate, includeConfigurator: delegate.includeConfigurator)
         app.delegate = delegate
         delegate.installReportURLHandler()
         app.finishLaunching()
+        delegate.openOrFocusReportWindow()
         app.activate(ignoringOtherApps: true)
         app.run()
     }
 
     static func showConfiguratorPlaceholder() {
         let app = NSApplication.shared
+        guard NotaryBuildCapabilities.hasConfigurator else {
+            showModuleUnavailableWindow(
+                title: "Configurator Unavailable",
+                message: "This Notary build does not include the Configurator module."
+            )
+            return
+        }
+        guard NotaryAppTokenHandler.evaluate().allowsConfigurator else {
+            showModuleUnavailableWindow(
+                title: "Configurator Authorization Required",
+                message: "This App Token does not include the Configurator capability."
+            )
+            return
+        }
         let delegate = NotaryConfiguratorWindowDelegate()
+        retainedConfiguratorDelegate = delegate
 
-        promoteProcessToForegroundApp()
         app.setActivationPolicy(.regular)
         app.mainMenu = makeConfiguratorMenu(delegate: delegate)
         app.delegate = delegate
         app.finishLaunching()
+        delegate.openOrFocusWindow()
         app.activate(ignoringOtherApps: true)
         app.run()
     }
 
     static func showJamfReporterWindow(logger: HardenLogger) {
         let app = NSApplication.shared
-        let delegate = NotaryJamfReporterWindowDelegate(logger: logger)
+        let delegate = NotaryJamfReporterWindowDelegate(logger: logger, availability: reporterAvailability())
+        retainedReporterDelegate = delegate
 
-        promoteProcessToForegroundApp()
         app.setActivationPolicy(.regular)
         app.mainMenu = makeJamfReporterMenu(delegate: delegate)
         app.delegate = delegate
         app.finishLaunching()
+        delegate.openOrFocusWindow()
         app.activate(ignoringOtherApps: true)
         app.run()
     }
@@ -54,11 +77,27 @@ enum NotaryGUI {
         let delegate = NotaryUptimeAlertWindowDelegate(logger: logger, payload: payload)
         retainedUptimeAlertDelegate = delegate
 
-        promoteProcessToForegroundApp()
         app.setActivationPolicy(.regular)
         app.mainMenu = makePlaceholderMenu(delegate: delegate)
         app.delegate = delegate
         app.finishLaunching()
+        delegate.openOrFocusWindow()
+        app.activate(ignoringOtherApps: true)
+        app.run()
+    }
+
+    private static func showModuleUnavailableWindow(title: String, message: String) {
+        let app = NSApplication.shared
+        let delegate = NotaryWindowDelegate(title: title, refreshTitle: nil) {
+            message
+        }
+        retainedPlaceholderDelegate = delegate
+
+        app.setActivationPolicy(.regular)
+        app.mainMenu = makePlaceholderMenu(delegate: delegate)
+        app.delegate = delegate
+        app.finishLaunching()
+        delegate.openOrFocusWindow()
         app.activate(ignoringOtherApps: true)
         app.run()
     }
@@ -80,11 +119,6 @@ enum NotaryGUI {
         let marketing = (info["CFBundleShortVersionString"] as? String) ?? NotaryVersion.marketingVersion
         let build = (info["CFBundleVersion"] as? String) ?? NotaryVersion.label
         return (marketing, build)
-    }
-
-    private static func promoteProcessToForegroundApp() {
-        var psn = ProcessSerialNumber(highLongOfPSN: 0, lowLongOfPSN: UInt32(kCurrentProcess))
-        TransformProcessType(&psn, ProcessApplicationTransformState(kProcessTransformToForegroundApplication))
     }
 
     fileprivate static func resolvedCGColor(_ color: NSColor, for view: NSView?) -> CGColor {
@@ -258,6 +292,22 @@ enum NotaryGUI {
         return mainMenu
     }
 
+    fileprivate static func canOpenConfigurator() -> Bool {
+        isCurrentUserAdmin() &&
+        NotaryBuildCapabilities.hasConfigurator &&
+        NotaryAppTokenHandler.evaluate().allowsConfigurator
+    }
+
+    fileprivate static func reporterAvailability() -> NotaryReporterAvailability {
+        guard NotaryBuildCapabilities.hasReporter else {
+            return .buildUnavailable
+        }
+        guard NotaryAppTokenHandler.evaluate().allowsReporter else {
+            return .unauthorized
+        }
+        return .available
+    }
+
     fileprivate static func isCurrentUserAdmin() -> Bool {
         guard let user = ManagedPrefs.consoleUser() else { return false }
         let task = Process()
@@ -294,10 +344,18 @@ private final class NotaryWindowDelegate: NSObject, NSApplicationDelegate, NSWin
     }
 
     func applicationDidFinishLaunching(_ notification: Notification) {
-        let window = buildWindow(frame: NSRect(x: 0, y: 0, width: 720, height: 520))
-        refreshContent()
+        openOrFocusWindow()
+    }
 
-        window.makeKeyAndOrderFront(nil)
+    func openOrFocusWindow() {
+        let targetWindow: NSWindow
+        if let window {
+            targetWindow = window
+        } else {
+            targetWindow = buildWindow(frame: NSRect(x: 0, y: 0, width: 720, height: 520))
+        }
+        refreshContent()
+        targetWindow.makeKeyAndOrderFront(nil)
         ensureAppPresentation()
     }
 
@@ -311,6 +369,7 @@ private final class NotaryWindowDelegate: NSObject, NSApplicationDelegate, NSWin
         window.title = title
         window.center()
         window.delegate = self
+        window.isRestorable = false
 
         let contentView = NSView(frame: window.contentView?.bounds ?? .zero)
         contentView.autoresizingMask = [.width, .height]
@@ -351,6 +410,10 @@ private final class NotaryWindowDelegate: NSObject, NSApplicationDelegate, NSWin
     }
 
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool {
+        true
+    }
+
+    func applicationSupportsSecureRestorableState(_ app: NSApplication) -> Bool {
         true
     }
 
@@ -438,6 +501,7 @@ private final class NotaryReportWindowDelegate: NSObject, NSApplicationDelegate,
     private var reportPollTimer: Timer?
     private var lastObservedReportStamp: Date?
     private var isShuttingDown = false
+    private var didRequestProcessExit = false
     private let issueSectionByValue = CheckIssueCatalog.sectionByIssueValue()
 
     init(logger: HardenLogger, includeConfigurator: Bool) {
@@ -465,6 +529,7 @@ private final class NotaryReportWindowDelegate: NSObject, NSApplicationDelegate,
         window.title = NotaryGUI.appName
         window.center()
         window.delegate = self
+        window.isRestorable = false
         window.minSize = NSSize(width: 1080, height: 760)
 
         let contentView = AppearanceObservingView(frame: window.contentView?.bounds ?? .zero)
@@ -580,7 +645,16 @@ private final class NotaryReportWindowDelegate: NSObject, NSApplicationDelegate,
     }
 
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool {
+        false
+    }
+
+    func applicationSupportsSecureRestorableState(_ app: NSApplication) -> Bool {
         true
+    }
+
+    func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
+        terminateProcessCleanly()
+        return .terminateCancel
     }
 
     func applicationWillTerminate(_ notification: Notification) {
@@ -593,6 +667,7 @@ private final class NotaryReportWindowDelegate: NSObject, NSApplicationDelegate,
         beginShutdown()
         window = nil
         onClose?()
+        terminateProcessCleanly()
     }
 
     func windowDidBecomeKey(_ notification: Notification) {
@@ -637,7 +712,7 @@ private final class NotaryReportWindowDelegate: NSObject, NSApplicationDelegate,
             let versionNote = versionMismatch ? "\n\nVersion note:\n- this app bundle differs from the last reported runner build" : ""
 
             headerTitleField?.stringValue = Host.current().localizedName ?? "This Mac"
-            headerSubtitleField?.stringValue = systemVersionSummary()
+            headerSubtitleField?.stringValue = systemVersionSummary(reportOSVersion: report.osVersion)
             runnerMetric?.value = formattedMetricValue(report.runnerStatus)
             complianceMetric?.value = report.publicComplianceState.displayTitle
             lastUpdateMetric?.value = NotaryGUI.format(report.lastTransportUpdateAt ?? report.generatedAt)
@@ -654,6 +729,7 @@ private final class NotaryReportWindowDelegate: NSObject, NSApplicationDelegate,
             Last transport: \(NotaryGUI.format(report.lastTransportUpdateAt))
 
             Device context:
+            - operating system: \(report.osVersion ?? currentOSVersion())
             - serial number: \(report.serialNumber ?? "n/a")
             - model: \(report.hardwareModel ?? "n/a")
             - management: \(formattedManagementValue(report))
@@ -665,6 +741,7 @@ private final class NotaryReportWindowDelegate: NSObject, NSApplicationDelegate,
             - protected internal state remains private
             - this window only reflects the public report output
             """
+            relayoutReportTextViews()
         } catch {
             logger.error("[NotaryGUI] Failed to read public report: \(error)")
             headerSubtitleField?.stringValue = systemVersionSummary()
@@ -677,6 +754,7 @@ private final class NotaryReportWindowDelegate: NSObject, NSApplicationDelegate,
             issuesView?.string = "Failed to load report."
             detailView?.string = "\(error)"
             footerField?.stringValue = formatAppTokenFooter(nil)
+            relayoutReportTextViews()
         }
     }
 
@@ -694,7 +772,11 @@ private final class NotaryReportWindowDelegate: NSObject, NSApplicationDelegate,
     }
 
     @objc func openJamfReporter() {
-        let delegate = NotaryJamfReporterWindowDelegate(logger: logger, terminatesApplicationOnClose: false)
+        let delegate = NotaryJamfReporterWindowDelegate(
+            logger: logger,
+            availability: NotaryGUI.reporterAvailability(),
+            terminatesApplicationOnClose: false
+        )
         delegate.onClose = { [weak self] in
             self?.ensureAppPresentation()
         }
@@ -717,7 +799,7 @@ private final class NotaryReportWindowDelegate: NSObject, NSApplicationDelegate,
     }
 
     @objc func closeWindow() {
-        window?.close()
+        terminateProcessCleanly()
     }
 
     @objc private func handleGetURLEvent(_ event: NSAppleEventDescriptor, withReplyEvent replyEvent: NSAppleEventDescriptor) {
@@ -755,7 +837,7 @@ private final class NotaryReportWindowDelegate: NSObject, NSApplicationDelegate,
         openOrFocusReportWindow()
     }
 
-    private func openOrFocusReportWindow() {
+    func openOrFocusReportWindow() {
         isShuttingDown = false
 
         let reportWindow: NSWindow
@@ -807,6 +889,15 @@ private final class NotaryReportWindowDelegate: NSObject, NSApplicationDelegate,
         guard !isShuttingDown else { return }
         isShuttingDown = true
         stopMonitoringReportFile()
+    }
+
+    private func terminateProcessCleanly() {
+        guard !didRequestProcessExit else { return }
+        didRequestProcessExit = true
+        beginShutdown()
+        NSAppleEventManager.shared().removeEventHandler(forEventClass: AEEventClass(kInternetEventClass), andEventID: AEEventID(kAEGetURL))
+        DistributedNotificationCenter.default().removeObserver(self, name: NotaryReportOpenRequest.notificationName, object: nil)
+        Darwin._exit(EXIT_SUCCESS)
     }
 
     private func ensureAppPresentation() {
@@ -976,9 +1067,14 @@ private final class NotaryReportWindowDelegate: NSObject, NSApplicationDelegate,
         textView.isEditable = false
         textView.isSelectable = true
         textView.drawsBackground = false
+        textView.isHorizontallyResizable = false
+        textView.isVerticallyResizable = true
+        textView.autoresizingMask = [.width]
         textView.textColor = .labelColor
         textView.font = NSFont.systemFont(ofSize: 14, weight: .regular)
         textView.textContainerInset = NSSize(width: 0, height: 4)
+        textView.textContainer?.widthTracksTextView = true
+        textView.textContainer?.containerSize = NSSize(width: scrollView.bounds.width, height: CGFloat.greatestFiniteMagnitude)
         scrollView.documentView = textView
         container.addSubview(scrollView)
 
@@ -990,12 +1086,36 @@ private final class NotaryReportWindowDelegate: NSObject, NSApplicationDelegate,
         let titleField = container.subviews.compactMap { $0 as? NSTextField }.first
         let scrollView = container.subviews.compactMap { $0 as? NSScrollView }.first
         titleField?.frame = NSRect(x: 20, y: container.bounds.height - 36, width: container.bounds.width - 40, height: 24)
-        scrollView?.frame = NSRect(x: 20, y: 18, width: container.bounds.width - 40, height: container.bounds.height - 64)
+        let scrollFrame = NSRect(x: 20, y: 18, width: container.bounds.width - 40, height: container.bounds.height - 64)
+        scrollView?.frame = scrollFrame
+        if let textView = scrollView?.documentView as? NSTextView {
+            textView.textContainer?.containerSize = NSSize(width: scrollFrame.width, height: CGFloat.greatestFiniteMagnitude)
+            textView.textContainer?.widthTracksTextView = true
+            if let textContainer = textView.textContainer {
+                textView.layoutManager?.ensureLayout(for: textContainer)
+                let usedHeight = textView.layoutManager?.usedRect(for: textContainer).height ?? scrollFrame.height
+                let insetHeight = textView.textContainerInset.height * 2
+                textView.frame = NSRect(x: 0, y: 0, width: scrollFrame.width, height: max(scrollFrame.height, ceil(usedHeight + insetHeight + 8)))
+            } else {
+                textView.frame = NSRect(x: 0, y: 0, width: scrollFrame.width, height: scrollFrame.height)
+            }
+            textView.needsDisplay = true
+        }
     }
 
-    private func systemVersionSummary() -> String {
+    private func relayoutReportTextViews() {
+        layoutTextSection(issuesCard)
+        layoutTextSection(detailsCard)
+    }
+
+    private func systemVersionSummary(reportOSVersion: String? = nil) -> String {
+        let osVersion = reportOSVersion?.trimmingCharacters(in: .whitespacesAndNewlines)
+        return "\(osVersion?.isEmpty == false ? osVersion! : currentOSVersion()) • local proof and transport overview (\(NotaryVersion.label))"
+    }
+
+    private func currentOSVersion() -> String {
         let version = ProcessInfo.processInfo.operatingSystemVersion
-        return "macOS \(version.majorVersion).\(version.minorVersion).\(version.patchVersion) • local proof and transport overview (\(NotaryVersion.label))"
+        return "macOS \(version.majorVersion).\(version.minorVersion).\(version.patchVersion)"
     }
 
     private func formattedManagementValue(_ report: NotaryPublicReport) -> String {
@@ -1015,10 +1135,22 @@ private final class NotaryReportWindowDelegate: NSObject, NSApplicationDelegate,
             return "App Token: Not available\nFeatures: None   Valid until: n/a"
         }
 
-        let features = report.appTokenFeatures.contains("transporter") ? "Transport" : "None"
+        let features = displayAppTokenFeatures(report.appTokenFeatures)
         let validUntil = report.appTokenValidUntil?.trimmingCharacters(in: .whitespacesAndNewlines)
         let validUntilText = validUntil?.isEmpty == false ? validUntil! : "n/a"
         return "App Token: \(customer)\nFeatures: \(features)   Valid until: \(validUntilText)"
+    }
+
+    private func displayAppTokenFeatures(_ features: [String]) -> String {
+        let displayNames: [(feature: String, title: String)] = [
+            (NotaryTokenFeature.transport, "Transport"),
+            (NotaryTokenFeature.reporter, "Reporter"),
+            (NotaryTokenFeature.configurator, "Configurator"),
+        ]
+        let names = displayNames.compactMap { entry in
+            features.contains(entry.feature) ? entry.title : nil
+        }
+        return names.isEmpty ? "None" : names.joined(separator: ", ")
     }
 
     private func formatIssuesForDisplay(_ issues: String) -> String {
@@ -1132,9 +1264,18 @@ private final class NotaryConfiguratorWindowDelegate: NSObject, NSApplicationDel
     }
 
     func applicationDidFinishLaunching(_ notification: Notification) {
-        let window = buildWindow(frame: NSRect(x: 0, y: 0, width: 1520, height: 920))
+        openOrFocusWindow()
+    }
+
+    func openOrFocusWindow() {
+        let targetWindow: NSWindow
+        if let window {
+            targetWindow = window
+        } else {
+            targetWindow = buildWindow(frame: NSRect(x: 0, y: 0, width: 1520, height: 920))
+        }
         reloadSchema()
-        window.makeKeyAndOrderFront(nil)
+        targetWindow.makeKeyAndOrderFront(nil)
         offerCurrentManagedConfigurationImport()
         ensureAppPresentation()
     }
@@ -1150,6 +1291,7 @@ private final class NotaryConfiguratorWindowDelegate: NSObject, NSApplicationDel
         window.minSize = NSSize(width: 1400, height: 860)
         window.center()
         window.delegate = self
+        window.isRestorable = false
 
         let contentView = AppearanceObservingView(frame: window.contentView?.bounds ?? .zero)
         contentView.appearanceDidChange = { [weak self] in
@@ -1313,6 +1455,10 @@ private final class NotaryConfiguratorWindowDelegate: NSObject, NSApplicationDel
 
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool {
         terminatesApplicationOnClose
+    }
+
+    func applicationSupportsSecureRestorableState(_ app: NSApplication) -> Bool {
+        true
     }
 
     func windowWillClose(_ notification: Notification) {
@@ -1508,7 +1654,7 @@ private final class NotaryConfiguratorWindowDelegate: NSObject, NSApplicationDel
             typeField?.stringValue = "Type: –"
             defaultField?.stringValue = "Default: –"
             currentValueField?.stringValue = "Current: –"
-            infoView?.string = "No schema values available.\n\n\(error)"
+            setConfiguratorInfoText("No schema values available.\n\n\(error)")
             renderEditor(for: nil)
             return
         }
@@ -1520,7 +1666,7 @@ private final class NotaryConfiguratorWindowDelegate: NSObject, NSApplicationDel
             typeField?.stringValue = "Type: –"
             defaultField?.stringValue = "Default: –"
             currentValueField?.stringValue = "Current: –"
-            infoView?.string = ""
+            setConfiguratorInfoText("")
             renderEditor(for: nil)
             return
         }
@@ -1532,12 +1678,12 @@ private final class NotaryConfiguratorWindowDelegate: NSObject, NSApplicationDel
         defaultField?.stringValue = "Standard: \(displayTitle(for: node.defaultValue, in: node) ?? "–")"
         currentValueField?.stringValue = ""
 
-        infoView?.string = showsDebugDetails
-            ? debugReferenceText(for: node)
-            : friendlyReferenceText(for: node)
         infoView?.font = showsDebugDetails
             ? NSFont.monospacedSystemFont(ofSize: 12.5, weight: .regular)
             : NSFont.systemFont(ofSize: 15, weight: .regular)
+        setConfiguratorInfoText(showsDebugDetails
+            ? debugReferenceText(for: node)
+            : friendlyReferenceText(for: node))
         renderEditor(for: node)
     }
 
@@ -1889,6 +2035,9 @@ private final class NotaryConfiguratorWindowDelegate: NSObject, NSApplicationDel
             let maybeScroll = infoSectionContainer.subviews[1]
             title.frame = NSRect(x: 12, y: infoHeight - 24, width: infoSectionContainer.bounds.width - 24, height: 16)
             maybeScroll.frame = NSRect(x: 12, y: 12, width: infoSectionContainer.bounds.width - 24, height: infoHeight - 50)
+            if let scrollView = maybeScroll as? NSScrollView {
+                layoutConfiguratorTextView(in: scrollView)
+            }
         }
         debugDetailsButton?.frame = NSRect(x: infoSectionContainer.bounds.width - 128, y: infoHeight - 28, width: 116, height: 22)
 
@@ -1945,10 +2094,36 @@ private final class NotaryConfiguratorWindowDelegate: NSObject, NSApplicationDel
         textView.drawsBackground = false
         textView.textColor = .labelColor
         textView.font = NSFont.monospacedSystemFont(ofSize: 12.5, weight: .regular)
+        textView.isHorizontallyResizable = false
+        textView.isVerticallyResizable = true
+        textView.autoresizingMask = [.width]
+        textView.textContainerInset = NSSize(width: 0, height: 4)
+        textView.textContainer?.widthTracksTextView = true
+        textView.textContainer?.containerSize = NSSize(width: scrollView.bounds.width, height: CGFloat.greatestFiniteMagnitude)
         scrollView.documentView = textView
         container.addSubview(scrollView)
 
         return (container, textView)
+    }
+
+    private func setConfiguratorInfoText(_ text: String) {
+        infoView?.string = text
+        if let scrollView = infoView?.enclosingScrollView {
+            layoutConfiguratorTextView(in: scrollView)
+        }
+    }
+
+    private func layoutConfiguratorTextView(in scrollView: NSScrollView) {
+        guard let textView = scrollView.documentView as? NSTextView else { return }
+        let width = max(1, scrollView.contentView.bounds.width)
+        let height = max(scrollView.contentView.bounds.height, textView.frame.height)
+        textView.frame = NSRect(x: 0, y: 0, width: width, height: height)
+        textView.textContainer?.containerSize = NSSize(width: width, height: CGFloat.greatestFiniteMagnitude)
+        textView.textContainer?.widthTracksTextView = true
+        if let textContainer = textView.textContainer {
+            textView.layoutManager?.ensureLayout(for: textContainer)
+        }
+        textView.needsDisplay = true
     }
 
     private func makeEmbeddedEditorSection(parentBounds: NSRect, y: CGFloat, height: CGFloat, title: String) -> (container: NSView, editorHost: NSView) {

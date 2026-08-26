@@ -45,9 +45,12 @@ NOTARY_PROFILE  ?= notary-profile
 # explicit local Ministry package path and fail fast if it is missing.
 TRANSPORT_IMPLEMENTATION ?= public
 CONFIDENTIAL_TRANSPORT_PATH ?=
+REPORTER_IMPLEMENTATION ?= public
+CONFIDENTIAL_REPORTER_PATH ?=
 MINISTRY_CONFIDENTIAL_TRANSPORT_PATH := $(CURDIR)/Sources.local/NotaryConfidentialTransport
+MINISTRY_CONFIDENTIAL_REPORTER_PATH := Sources.local/NotaryConfidentialReporter
 MINISTRY_APP_TOKEN_GENERATOR_PATH := $(CURDIR)/Sources.local/AppTokenGenerator
-SWIFT_BUILD_ENV := NOTARY_TRANSPORT_IMPLEMENTATION="$(TRANSPORT_IMPLEMENTATION)" NOTARY_CONFIDENTIAL_TRANSPORT_PATH="$(CONFIDENTIAL_TRANSPORT_PATH)"
+SWIFT_BUILD_ENV := NOTARY_TRANSPORT_IMPLEMENTATION="$(TRANSPORT_IMPLEMENTATION)" NOTARY_CONFIDENTIAL_TRANSPORT_PATH="$(CONFIDENTIAL_TRANSPORT_PATH)" NOTARY_REPORTER_IMPLEMENTATION="$(REPORTER_IMPLEMENTATION)" NOTARY_CONFIDENTIAL_REPORTER_PATH="$(CONFIDENTIAL_REPORTER_PATH)"
 
 # ----------------------------
 # Paths
@@ -140,6 +143,8 @@ check-confidential-release:
 	@test -d "$(MINISTRY_CONFIDENTIAL_TRANSPORT_PATH)" || (echo "Missing confidential Transporter: $(MINISTRY_CONFIDENTIAL_TRANSPORT_PATH)" >&2; exit 2)
 	@test -f "$(MINISTRY_CONFIDENTIAL_TRANSPORT_PATH)/Package.swift" || (echo "Missing confidential Transporter package manifest." >&2; exit 2)
 	@test -f "$(MINISTRY_CONFIDENTIAL_TRANSPORT_PATH)/Sources/NotaryTransportImplementation/TransportImplementation.swift" || (echo "Missing confidential Transporter implementation source." >&2; exit 2)
+	@test -d "$(MINISTRY_CONFIDENTIAL_REPORTER_PATH)" || (echo "Missing confidential Reporter: $(MINISTRY_CONFIDENTIAL_REPORTER_PATH)" >&2; exit 2)
+	@test -f "$(MINISTRY_CONFIDENTIAL_REPORTER_PATH)/NotaryJamfReporterWindow.swift" || (echo "Missing confidential Reporter implementation source." >&2; exit 2)
 
 check-app-token-generator:
 	@test -d "$(MINISTRY_APP_TOKEN_GENERATOR_PATH)" || (echo "Missing local App Token Generator sources: $(MINISTRY_APP_TOKEN_GENERATOR_PATH)" >&2; exit 2)
@@ -304,6 +309,7 @@ endif
 	@if [[ "$(TRANSPORT_IMPLEMENTATION)" == "confidential" ]]; then \
 	  echo "CONFIDENTIAL RELEASE BUILD"; \
 	  echo "Transport implementation: confidential"; \
+	  echo "Reporter implementation: $(REPORTER_IMPLEMENTATION)"; \
 	  echo "Public keys embedded: $$(grep -c '": Data' "$(APP_TOKEN_PUBLIC_KEYS_SWIFT)" 2>/dev/null || echo 0)"; \
 	fi
 	codesign --force --options runtime --timestamp \
@@ -331,9 +337,9 @@ prepare-payload-root: sign-bin
 
 prepare-component-plist: prepare-payload-root
 	pkgbuild --analyze --root "$(PKG_ROOT_DIR)" "$(COMPONENT_PLIST)"
-	/usr/libexec/PlistBuddy -c "Set :0:BundleIsRelocatable false" "$(COMPONENT_PLIST)"
-	/usr/libexec/PlistBuddy -c "Set :0:BundleHasStrictIdentifier true" "$(COMPONENT_PLIST)"
-	/usr/libexec/PlistBuddy -c "Set :0:BundleOverwriteAction upgrade" "$(COMPONENT_PLIST)"
+	/usr/libexec/PlistBuddy -c "Set :0:BundleIsRelocatable false" "$(COMPONENT_PLIST)" || /usr/libexec/PlistBuddy -c "Add :0:BundleIsRelocatable bool false" "$(COMPONENT_PLIST)"
+	/usr/libexec/PlistBuddy -c "Set :0:BundleHasStrictIdentifier true" "$(COMPONENT_PLIST)" || /usr/libexec/PlistBuddy -c "Add :0:BundleHasStrictIdentifier bool true" "$(COMPONENT_PLIST)"
+	/usr/libexec/PlistBuddy -c "Set :0:BundleOverwriteAction upgrade" "$(COMPONENT_PLIST)" || /usr/libexec/PlistBuddy -c "Add :0:BundleOverwriteAction string upgrade" "$(COMPONENT_PLIST)"
 
 # Build an (unsigned) component pkg from payload
 pkg: prepare-payload-root prepare-pkg-scripts prepare-component-plist
@@ -384,7 +390,9 @@ release-public: pkg-sign pkg-verify
 release-confidential: check-confidential-release
 	@$(MAKE) release-internal \
 	  TRANSPORT_IMPLEMENTATION=confidential \
-	  CONFIDENTIAL_TRANSPORT_PATH="$(MINISTRY_CONFIDENTIAL_TRANSPORT_PATH)"
+	  CONFIDENTIAL_TRANSPORT_PATH="$(MINISTRY_CONFIDENTIAL_TRANSPORT_PATH)" \
+	  REPORTER_IMPLEMENTATION=confidential \
+	  CONFIDENTIAL_REPORTER_PATH="$(MINISTRY_CONFIDENTIAL_REPORTER_PATH)"
 
 release-internal: pkg-sign pkg-verify
 	@echo "Built: $(PKG_SIGNED)"

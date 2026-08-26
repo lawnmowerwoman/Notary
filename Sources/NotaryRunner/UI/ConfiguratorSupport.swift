@@ -331,9 +331,40 @@ enum ConfigSchemaLoader {
             throw NSError(domain: "NotaryConfigurator", code: 422, userInfo: [NSLocalizedDescriptionKey: "Invalid schema format."])
         }
 
-        return sortedPropertyEntries(from: properties).compactMap { key, node in
+        let nodes = sortedPropertyEntries(from: properties).compactMap { key, node in
             buildNode(key: key, path: key, node: node)
         }
+        return groupingLicensingNodesLast(nodes)
+    }
+
+    private static func groupingLicensingNodesLast(_ nodes: [ConfigNode]) -> [ConfigNode] {
+        var remaining: [ConfigNode] = []
+        var licensingChildren: [ConfigNode] = []
+
+        for node in nodes {
+            if node.keyPath == "apptoken" {
+                licensingChildren.append(node)
+            } else {
+                remaining.append(node)
+            }
+        }
+
+        guard !licensingChildren.isEmpty else { return nodes }
+
+        remaining.append(
+            ConfigNode(
+                keyPath: "Licensing",
+                title: "Licensing",
+                summary: "App Token licensing and module capabilities.",
+                kind: .section,
+                type: "object",
+                defaultValue: nil,
+                allowedValues: [],
+                allowedValueTitles: [],
+                children: licensingChildren
+            )
+        )
+        return remaining
     }
 
     private static func buildNode(key: String, path: String, node: [String: Any]) -> ConfigNode? {
