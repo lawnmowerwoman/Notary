@@ -12,6 +12,7 @@ enum TransportRegressionTests {
         capabilityGateAllowsTransporterFeature()
         reporterAndConfiguratorCapabilitiesAreIndependent()
         securePlistStorePreservesAppToken()
+        machineIdentifierIsStableSaltedHash()
         print("Transport regression tests passed")
     }
 
@@ -75,13 +76,14 @@ enum TransportRegressionTests {
             try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
             let existing: [String: Any] = [
                 "apptoken": "TAT1.test-token",
+                "activationCode": "NOTXTEST123",
                 "lastRunOK": true
             ]
             let existingData = try PropertyListSerialization.data(fromPropertyList: existing, format: .binary, options: 0)
             try existingData.write(to: plist)
 
             let store = SecurePlistStore<RunnerState>(
-                preservedExternalKeys: ["apptoken"],
+                preservedExternalKeys: ["apptoken", NotaryActivationCode.key],
                 rootURL: plist,
                 tmpURL: plist
             )
@@ -92,11 +94,23 @@ enum TransportRegressionTests {
             let savedData = try Data(contentsOf: plist)
             let saved = try PropertyListSerialization.propertyList(from: savedData, options: [], format: nil) as? [String: Any]
             expect(saved?["apptoken"] as? String == "TAT1.test-token", "secure store preserves external app token")
+            expect(saved?["activationCode"] as? String == "NOTXTEST123", "secure store preserves external activation code")
             expect(saved?["lastRunOK"] as? Bool == false, "secure store still updates runner state")
         } catch {
             fputs("Test failed: secure store preservation threw \(error)\n", stderr)
             Foundation.exit(1)
         }
+    }
+
+    static func machineIdentifierIsStableSaltedHash() {
+        let rawUUID = "A1B2C3D4-E5F6-47A8-9B0C-D1E2F3A4B5C6"
+        let first = NotaryMachineIdentity.identifier(forIOPlatformUUID: rawUUID)
+        let second = NotaryMachineIdentity.identifier(forIOPlatformUUID: rawUUID.lowercased())
+
+        expect(first == second, "machine identifier normalizes IOPlatformUUID case")
+        expect(first?.count == 64, "machine identifier is a SHA-256 hex digest")
+        expect(first != rawUUID, "machine identifier never exposes raw IOPlatformUUID")
+        expect(first != HardwareInfo.serialNumber(), "machine identifier is not derived from the serial number")
     }
 
     static func makeRequest(shouldTransport: Bool) -> TransportRequest {

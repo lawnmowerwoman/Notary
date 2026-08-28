@@ -14,7 +14,10 @@ enum NotaryCycleExecutor {
     ) async throws {
         try guardNotShuttingDown(logger: logger, phase: "cycle start")
 
-        let store = SecurePlistStore<RunnerState>(logger: logger, preservedExternalKeys: ["apptoken"])
+        let store = SecurePlistStore<RunnerState>(
+            logger: logger,
+            preservedExternalKeys: ["apptoken", NotaryActivationCode.key]
+        )
         var state = try store.load() ?? RunnerState()
 
         let configuredAPIUpdate = state.apiupdate ?? true
@@ -51,6 +54,13 @@ enum NotaryCycleExecutor {
 
         let appTokenAuthorization = NotaryAppTokenHandler.evaluate()
         NotaryAppTokenHandler.log(appTokenAuthorization, logger: logger)
+        if let activationCode = NotaryActivationCode.resolved(
+            rawSnapshot: configurationSnapshot.rawSnapshot,
+            state: state,
+            authorization: appTokenAuthorization
+        ) {
+            state.activationCode = activationCode
+        }
         if effectiveRemoteTransport, !appTokenAuthorization.allowsTransporter {
             logger.warn("Remote transport disabled because the App Token does not grant the transporter capability.")
             effectiveRemoteTransport = false

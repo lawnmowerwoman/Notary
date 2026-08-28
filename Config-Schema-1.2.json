@@ -41,6 +41,13 @@
       "propertyOrder": 999
     },
 
+    "activationCode": {
+      "type": "string",
+      "title": "Activation Code",
+      "description": "Optional persistent customer activation identity. The Activation Code identifies; the App Token authorizes.",
+      "propertyOrder": 1000
+    },
+
     "CoreSecurity": {
       "type": "object",
       "title": "Core Security",

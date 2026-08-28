@@ -22,6 +22,25 @@ package enum HardwareInfo {
         return nil
     }
 
+    package static func ioPlatformUUID() -> String? {
+        guard let r = try? Shell.run(
+            "/usr/sbin/ioreg",
+            ["-rd1", "-c", "IOPlatformExpertDevice"],
+            timeout: 5
+        ) else { return nil }
+
+        for line in r.stdout.split(separator: "\n") {
+            if line.contains("IOPlatformUUID") {
+                let parts = line.split(separator: "\"")
+                if let uuid = parts.last(where: { !$0.trimmingCharacters(in: .whitespaces).isEmpty }),
+                   !uuid.contains("IOPlatformUUID") {
+                    return String(uuid).trimmingCharacters(in: .whitespacesAndNewlines)
+                }
+            }
+        }
+        return nil
+    }
+
     package static func hwModel() -> String? {
         guard let r = try? Shell.run(
             "/usr/sbin/sysctl",

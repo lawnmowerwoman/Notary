@@ -20,6 +20,7 @@ package enum GeneratedKeys {
     "System",
     "Telemetry",
     "TimeNTP",
+    "activationCode",
     "apptoken",
   ]
 
@@ -111,6 +112,7 @@ package enum GeneratedKeys {
     "TimeNTP.DefaultTimeZone",
     "TimeNTP.ForceTimeServer",
     "TimeNTP.TimeServer",
+    "activationCode",
     "apptoken",
   ])
 }

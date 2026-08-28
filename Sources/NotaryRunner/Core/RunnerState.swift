@@ -25,6 +25,7 @@ package struct RunnerState: Codable {
 
     package var apiupdate: Bool?
     package var reportpercent: Bool?
+    package var activationCode: String?
 
     // EA caching
     package var eaDefinitionIDs: [String: Int] = [:]
@@ -51,6 +52,7 @@ package struct RunnerState: Codable {
     enum CodingKeys: String, CodingKey {
         case schemaVersion, lastRunAt, lastRunOK, computerID
         case jamfClientID, jamfClientSecret, jamfBearerToken, jamfBearerExpirationEpoch, apiupdate, reportpercent
+        case activationCode
         case eaDefinitionIDs, eaCacheUpdatedAt
         case eaCacheRefreshAttemptedAt, eaCacheRefreshFailCount
         case lastTransportUpdateAt, lastReportedRunnerBaseStatus, lastReportedIssuesValue, lastReportedComplianceState, lastReportedComplianceValue, lastReportedCompliancePercentValue, lastReportedConnectionValue
@@ -77,6 +79,7 @@ package struct RunnerState: Codable {
 
         apiupdate = try c.decodeIfPresent(Bool.self, forKey: .apiupdate)
         reportpercent = try c.decodeIfPresent(Bool.self, forKey: .reportpercent)
+        activationCode = try c.decodeIfPresent(String.self, forKey: .activationCode)
 
         eaDefinitionIDs = try c.decodeIfPresent([String: Int].self, forKey: .eaDefinitionIDs) ?? [:]
         eaCacheUpdatedAt = try c.decodeIfPresent(Date.self, forKey: .eaCacheUpdatedAt)
