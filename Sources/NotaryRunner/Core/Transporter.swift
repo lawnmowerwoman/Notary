@@ -87,4 +87,24 @@ package enum Transporter {
         state.lastReportedCompliancePercentValue = reportPercent ? proof.compliancePercentValue : nil
         state.lastReportedConnectionValue = connectionValue
     }
+
+    package static func applyTransportOutcome(
+        didCompleteTransport: Bool,
+        proof: NotaryProof,
+        state: inout RunnerState,
+        at date: Date,
+        reportPercent: Bool,
+        connectionValue: String? = nil
+    ) {
+        guard didCompleteTransport else {
+            return
+        }
+        applySuccessfulTransport(
+            proof: proof,
+            state: &state,
+            at: date,
+            reportPercent: reportPercent,
+            connectionValue: connectionValue
+        )
+    }
 }

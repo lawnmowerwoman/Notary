@@ -4,6 +4,25 @@ import Foundation
 package enum NotaryActivationCode {
     package static let key = "activationCode"
 
+    package static func currentDisplayValue() -> String? {
+        let rawSnapshot = ManagedPrefs.snapshot(
+            domain: "de.twocent.notary",
+            topLevelKeys: [key]
+        )
+        if let managedValue = firstManagedValue(rawSnapshot: rawSnapshot) {
+            return managedValue
+        }
+        if let state = try? SecurePlistStore<RunnerState>().load(),
+           let stateValue = normalized(state.activationCode) {
+            return stateValue
+        }
+        if let report = try? NotaryPublicReportStore().load(),
+           let reportValue = normalized(report.activationCode ?? report.appTokenActivationCode) {
+            return reportValue
+        }
+        return nil
+    }
+
     package static func resolved(
         rawSnapshot: [String: Any],
         state: RunnerState,

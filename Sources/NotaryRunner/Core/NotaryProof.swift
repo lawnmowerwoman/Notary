@@ -11,6 +11,28 @@ package struct NotaryProof {
     package let compliancePercent: Int
     package let issueNames: [String]
 
+    package init(
+        generatedAt: Date,
+        passedCount: Int,
+        failedCount: Int,
+        unknownCount: Int,
+        timedOutCount: Int,
+        skippedCount: Int,
+        hardFailCount: Int,
+        compliancePercent: Int,
+        issueNames: [String]
+    ) {
+        self.generatedAt = generatedAt
+        self.passedCount = passedCount
+        self.failedCount = failedCount
+        self.unknownCount = unknownCount
+        self.timedOutCount = timedOutCount
+        self.skippedCount = skippedCount
+        self.hardFailCount = hardFailCount
+        self.compliancePercent = compliancePercent
+        self.issueNames = issueNames
+    }
+
     package var countsBlock: String {
         "pass=\(passedCount) fail=\(failedCount)" +
         formattedCount("unknown", unknownCount) +

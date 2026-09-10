@@ -46,7 +46,8 @@ Der aktuelle Ablauf im Service-Modell ist:
 
 Wichtig dabei:
 
-- Die Werte `Notary Runner`, `Notary Issues` und `Notary Compliance` werden in `/var/db/notary.plist` abgelegt.
+- Die Werte `Notary Runner`, `Notary Issues`, `Notary Compliance` und `Notary Last Contact` werden in `/var/db/notary.plist` abgelegt.
+- `Notary Last Contact` ist ein UTC-Zeitstempel im Format `yyyy-MM-ddTHH:mm:ssZ` und wird nur nach einem erfolgreichen Reporting-Schritt aktualisiert.
 - Public Builds führen keinen Remote-Transport aus.
 
 ## Transporter-Verhalten
@@ -96,15 +97,15 @@ Hilfreiche CLI-Optionen:
 
 ## Deployment und LaunchDaemon
 
-Public Builds liefern die App, den Runner, die Menüleisten-Komponente und die lokale Report-Funktionalität. Ministry-spezifische Deployment- und Bootstrap-Skripte liegen nicht im öffentlichen Repository.
+Public Builds liefern die App, den Runner, die Menüleisten-Komponente und die lokale Report-Funktionalität.
 
-Autorisierte Ministry-Setups halten vertrauliche Deployment-Helfer unter:
+Das allgemeine Jamf-Deployment-Script liegt im öffentlichen Tool-Verzeichnis:
 
 ```text
-Sources.local/Deployment/
+Tools/deploy.sh
 ```
 
-Diese Dateien dürfen nicht in öffentliche Source-Archive oder öffentliche Release-Anhänge gelangen.
+Vertrauliche Build-Inputs wie der echte Transporter bleiben weiterhin unter `*.local/` und dürfen nicht in öffentliche Source-Archive oder öffentliche Release-Anhänge gelangen.
 
 ## Projektstruktur
 

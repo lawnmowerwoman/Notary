@@ -122,6 +122,10 @@ enum NotaryCycleExecutor {
 
         logger.info(transportReason.logMessage)
 
+        let transportContactAt = Date()
+        let lastContactValue = TransportTimestampFormat.extensionAttributeValue(for: transportContactAt)
+        var didCompleteTransport = false
+
         if effectiveRemoteTransport {
             let service = NotaryTransport.makeService()
             let request = TransportRequest(
@@ -143,7 +147,8 @@ enum NotaryCycleExecutor {
                     issues: proof.issuesValue,
                     compliance: proof.complianceValue,
                     percent: effectiveReportPercent ? proof.compliancePercentValue : nil,
-                    connection: connectionValue
+                    connection: connectionValue,
+                    lastContact: transportDecision.shouldUpdate ? lastContactValue : nil
                 )
             )
 
@@ -170,29 +175,32 @@ enum NotaryCycleExecutor {
                 state.eaCacheRefreshAttemptedAt = eaState.refreshAttemptedAt
                 state.eaCacheRefreshFailCount = eaState.refreshFailCount
             }
+            if result.status == .completed, result.didRemoteUpdate {
+                didCompleteTransport = true
+            }
         } else if configuredAPIUpdate {
             logger.info("Remote transport disabled for this run.")
         }
 
         try guardNotShuttingDown(logger: logger, phase: "local transport write")
 
-        var didWriteTransportToPlist = false
         if transportDecision.shouldUpdate {
             do {
                 let recon = ReconEAStore(path: "/var/db/notary.plist")
                 var reconValues = [
-                    "Notary Runner": proof.statusValue(versionLabel: NotaryVersion.label),
-                    "Notary Issues": proof.issuesValue,
-                    "Notary Compliance": proof.complianceValue
+                    NotaryJamfExtensionAttribute.runner: proof.statusValue(versionLabel: NotaryVersion.label),
+                    NotaryJamfExtensionAttribute.issues: proof.issuesValue,
+                    NotaryJamfExtensionAttribute.compliance: proof.complianceValue,
+                    NotaryJamfExtensionAttribute.lastContact: lastContactValue
                 ]
                 if effectiveReportPercent {
-                    reconValues["Notary Percent"] = proof.compliancePercentValue
+                    reconValues[NotaryJamfExtensionAttribute.percent] = proof.compliancePercentValue
                 }
                 if let connectionValue {
-                    reconValues["Notary Connection"] = connectionValue
+                    reconValues[NotaryJamfExtensionAttribute.connection] = connectionValue
                 }
                 try recon.write(values: reconValues)
-                didWriteTransportToPlist = true
+                didCompleteTransport = true
                 logger.develop("Recon EA values written to notary.plist")
             } catch {
                 logger.warn("Failed to write recon EA values to notary.plist: \(error)")
@@ -220,15 +228,14 @@ enum NotaryCycleExecutor {
             }
         }
 
-        if didWriteTransportToPlist {
-            Transporter.applySuccessfulTransport(
-                proof: proof,
-                state: &state,
-                at: proof.generatedAt,
-                reportPercent: effectiveReportPercent,
-                connectionValue: connectionValue
-            )
-        }
+        Transporter.applyTransportOutcome(
+            didCompleteTransport: didCompleteTransport,
+            proof: proof,
+            state: &state,
+            at: transportContactAt,
+            reportPercent: effectiveReportPercent,
+            connectionValue: connectionValue
+        )
 
         UptimeAlertCoordinator.handleIfNeeded(
             execution: execution,
@@ -262,6 +269,7 @@ enum NotaryCycleExecutor {
                 hardwareModel: hardwareModel,
                 managementHost: jamfProURL?.host,
                 managementComputerID: state.computerID,
+                activationCode: state.activationCode,
                 appTokenCustomerName: appTokenAuthorization.diagnostics.status == .valid ? appTokenAuthorization.diagnostics.payload?.customerName : nil,
                 appTokenActivationCode: appTokenAuthorization.diagnostics.status == .valid ? appTokenAuthorization.diagnostics.payload?.activationCode : nil,
                 appTokenValidUntil: appTokenAuthorization.diagnostics.status == .valid ? appTokenAuthorization.diagnostics.payload?.validUntil : nil,

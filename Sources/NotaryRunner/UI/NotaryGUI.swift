@@ -4,6 +4,7 @@ import ApplicationServices
 import UniformTypeIdentifiers
 import Darwin
 import NotaryCore
+import NotaryAboutUI
 import NotaryReporterImplementation
 
 @MainActor
@@ -434,13 +435,7 @@ private final class NotaryWindowDelegate: NSObject, NSApplicationDelegate, NSWin
     }
 
     @objc func showAboutPanel() {
-        let options: [NSApplication.AboutPanelOptionKey: Any] = [
-            .applicationName: NotaryGUI.appName,
-            .applicationVersion: NotaryVersion.marketingVersion,
-            .version: NotaryVersion.label,
-            .credits: NSAttributedString(string: "Released under Apache-2.0 License. All rights reserved.")
-        ]
-        NSApp.orderFrontStandardAboutPanel(options: options)
+        NotaryAboutPanel.show(applicationName: NotaryGUI.appName)
         ensureAppPresentation()
     }
 
@@ -788,13 +783,7 @@ private final class NotaryReportWindowDelegate: NSObject, NSApplicationDelegate,
     }
 
     @objc func showAboutPanel() {
-        let options: [NSApplication.AboutPanelOptionKey: Any] = [
-            .applicationName: NotaryGUI.appName,
-            .applicationVersion: NotaryVersion.marketingVersion,
-            .version: NotaryVersion.label,
-            .credits: NSAttributedString(string: "Released under Apache-2.0 License. All rights reserved.")
-        ]
-        NSApp.orderFrontStandardAboutPanel(options: options)
+        NotaryAboutPanel.show(applicationName: NotaryGUI.appName)
         ensureAppPresentation()
     }
 
@@ -1512,13 +1501,7 @@ private final class NotaryConfiguratorWindowDelegate: NSObject, NSApplicationDel
     }
 
     @objc func showAboutPanel() {
-        let options: [NSApplication.AboutPanelOptionKey: Any] = [
-            .applicationName: NotaryGUI.appName,
-            .applicationVersion: NotaryVersion.marketingVersion,
-            .version: NotaryVersion.label,
-            .credits: NSAttributedString(string: "Released under Apache-2.0 License. All rights reserved.")
-        ]
-        NSApp.orderFrontStandardAboutPanel(options: options)
+        NotaryAboutPanel.show(applicationName: NotaryGUI.appName)
         ensureAppPresentation()
     }
 

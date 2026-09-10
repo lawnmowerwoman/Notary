@@ -22,6 +22,24 @@ public struct TransportCredentials: Sendable, Equatable {
     }
 }
 
+public enum NotaryJamfExtensionAttribute {
+    public static let runner = "Notary Runner"
+    public static let issues = "Notary Issues"
+    public static let compliance = "Notary Compliance"
+    public static let percent = "Notary Percent"
+    public static let connection = "Notary Connection"
+    public static let lastContact = "Notary Last Contact"
+}
+
+public enum TransportTimestampFormat {
+    public static func extensionAttributeValue(for date: Date) -> String {
+        let formatter = ISO8601DateFormatter()
+        formatter.formatOptions = [.withInternetDateTime]
+        formatter.timeZone = TimeZone(secondsFromGMT: 0)
+        return formatter.string(from: date)
+    }
+}
+
 public struct TransportEAState: Sendable, Equatable {
     public var definitionIDs: [String: Int]
     public var cacheUpdatedAt: Date?
@@ -47,13 +65,22 @@ public struct TransportProofValues: Sendable, Equatable {
     public let compliance: String
     public let percent: String?
     public let connection: String?
+    public let lastContact: String?
 
-    public init(runner: String, issues: String, compliance: String, percent: String?, connection: String?) {
+    public init(
+        runner: String,
+        issues: String,
+        compliance: String,
+        percent: String?,
+        connection: String?,
+        lastContact: String? = nil
+    ) {
         self.runner = runner
         self.issues = issues
         self.compliance = compliance
         self.percent = percent
         self.connection = connection
+        self.lastContact = lastContact
     }
 }
 

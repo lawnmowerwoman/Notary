@@ -21,6 +21,7 @@ package struct NotaryPublicReport: Codable {
     package let hardwareModel: String?
     package let managementHost: String?
     package let managementComputerID: Int?
+    package let activationCode: String?
     package let appTokenCustomerName: String?
     package let appTokenActivationCode: String?
     package let appTokenValidUntil: String?
@@ -32,6 +33,7 @@ package struct NotaryPublicReport: Codable {
         case passedCount, failedCount, unknownCount, timedOutCount, skippedCount, compliancePercent
         case marketingVersion, versionLabel, osVersion
         case serialNumber, hardwareModel, managementHost, managementComputerID
+        case activationCode
         case appTokenCustomerName, appTokenActivationCode, appTokenValidUntil, appTokenFeatures
     }
 
@@ -55,6 +57,7 @@ package struct NotaryPublicReport: Codable {
         hardwareModel: String?,
         managementHost: String?,
         managementComputerID: Int?,
+        activationCode: String? = nil,
         appTokenCustomerName: String? = nil,
         appTokenActivationCode: String? = nil,
         appTokenValidUntil: String? = nil,
@@ -79,6 +82,7 @@ package struct NotaryPublicReport: Codable {
         self.hardwareModel = hardwareModel
         self.managementHost = managementHost
         self.managementComputerID = managementComputerID
+        self.activationCode = activationCode
         self.appTokenCustomerName = appTokenCustomerName
         self.appTokenActivationCode = appTokenActivationCode
         self.appTokenValidUntil = appTokenValidUntil
@@ -106,6 +110,7 @@ package struct NotaryPublicReport: Codable {
         hardwareModel = try container.decodeIfPresent(String.self, forKey: .hardwareModel)
         managementHost = try container.decodeIfPresent(String.self, forKey: .managementHost)
         managementComputerID = try container.decodeIfPresent(Int.self, forKey: .managementComputerID)
+        activationCode = try container.decodeIfPresent(String.self, forKey: .activationCode)
         appTokenCustomerName = try container.decodeIfPresent(String.self, forKey: .appTokenCustomerName)
         appTokenActivationCode = try container.decodeIfPresent(String.self, forKey: .appTokenActivationCode)
         appTokenValidUntil = try container.decodeIfPresent(String.self, forKey: .appTokenValidUntil)

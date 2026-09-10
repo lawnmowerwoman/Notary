@@ -4,6 +4,8 @@ Alle wesentlichen Änderungen an Notary sollen hier in knapper Form dokumentiert
 
 ## Unreleased
 
+- RC-Prüfpunkt für macOS 27 ergänzt: `xprotect check` kann auf dem aktuellen Apple-RC `XProtectUpdateError Code=11` melden; Verhalten beobachten, bevor daraus eine Notary-Änderung abgeleitet wird.
+- Beta-Kandidat `2.1.1 (1B36a)` veröffentlicht: Activation-Code-Persistenz, App-Token-gesteuerte Features, Menu-Bar-Status, macOS-27-Start/Stop-Härtung, Jamf-Last-Contact-Reporting und öffentliches Deploy-Script mit `Notary Last Contact`-EA. SHA-256: `fbacfb6863bd69afdeccfdc1da5a3ab24de75935387edf6a3da5035278e17ee9`.
 - Rapid-Fix `2.1.1 (1B21h)` veröffentlicht: Status Companion erlaubt macOS-Poweroff/Logout-Terminierung und blockiert den Shutdown nicht mehr. SHA-256: `5ac58558e466b69d68a5b8855413b75b45f4aa07df8c06237015bfdd6df6cd66`.
 - Public-Beta-Kandidat `2.1 (1B20h)` veröffentlicht: Confidential Release Build, signiert, notarisiert und gestapled. SHA-256: `3ba1753ce8edd628b45d194b4022f3cd3c03216c5260a8c7b0d951f7e9a090b8`.
 - App-Token-UX finalisiert: Generator speichert `.atoken`, schlägt Customer-Namen als Dateinamen vor und filtert den Öffnen-Dialog auf App Token.

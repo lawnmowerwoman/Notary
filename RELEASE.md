@@ -78,7 +78,7 @@ Für Confidential Ministry Builds zusätzlich prüfen:
 
 - `make release-confidential` zeigt vor der Signierung den Confidential-Build-Banner.
 - Der vertrauliche Transporter wird ausschließlich aus `Sources.local/` eingebunden.
-- Operative Deployment-Helfer bleiben in `*.local/`-Verzeichnissen.
+- Das öffentliche Jamf-Deploy-Script liegt unter `Tools/deploy.sh`; vertrauliche Build-Inputs bleiben in `*.local/`-Verzeichnissen.
 - Bei Packaging-Umstellungen wurden Service-Pfad und Legacy-Cleanup bewusst gegen ältere Clients geprüft.
 
 5. Git-Tag erzeugen:
@@ -106,17 +106,18 @@ Ein Release sollte kurz dokumentieren:
 ## Aktueller Beta-Kandidat
 
 - Version: `2.1.1`
-- Build: `1B21h`
-- Paket: `dist/notary-2.1.1-1B21h.pkg`
+- Build: `1B36a`
+- Paket: `dist/notary-2.1.1-1B36a.pkg`
 - Build-Typ: Confidential Release Build
 - Transport: confidential implementation
-- Eingebettete Public Keys: `1`
+- Reporter: confidential implementation
+- Eingebettete Public Keys: `2`
 - Signatur: Developer ID Installer, gültig
 - Notarisierung: Accepted
 - Staple: valid
 - Gatekeeper: `accepted`, `source=Notarized Developer ID`
-- Größe: `3.0M`
-- SHA-256: `5ac58558e466b69d68a5b8855413b75b45f4aa07df8c06237015bfdd6df6cd66`
+- Größe: `3.1M`
+- SHA-256: `fbacfb6863bd69afdeccfdc1da5a3ab24de75935387edf6a3da5035278e17ee9`
 
 Hinweis: Ein GitHub Beta-Release darf erst erstellt werden, wenn der zugehörige
 öffentliche Source-Stand bereinigt ist. GitHub erzeugt automatisch Source

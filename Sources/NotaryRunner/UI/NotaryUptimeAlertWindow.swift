@@ -1,6 +1,7 @@
 import Foundation
 import AppKit
 import NotaryCore
+import NotaryAboutUI
 
 @MainActor
 final class NotaryUptimeAlertWindowDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
@@ -117,13 +118,7 @@ final class NotaryUptimeAlertWindowDelegate: NSObject, NSApplicationDelegate, NS
     }
 
     @objc func showAboutPanel() {
-        let options: [NSApplication.AboutPanelOptionKey: Any] = [
-            .applicationName: NotaryGUI.appName,
-            .applicationVersion: NotaryVersion.marketingVersion,
-            .version: NotaryVersion.label,
-            .credits: NSAttributedString(string: "Released under Apache-2.0 License. All rights reserved.")
-        ]
-        NSApp.orderFrontStandardAboutPanel(options: options)
+        NotaryAboutPanel.show(applicationName: NotaryGUI.appName)
         ensureAppPresentation()
     }
 

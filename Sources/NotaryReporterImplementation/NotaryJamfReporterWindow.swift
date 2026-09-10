@@ -1,5 +1,6 @@
 import AppKit
 import Foundation
+import NotaryAboutUI
 import NotaryCore
 
 package enum NotaryReporterAvailability: Equatable {
@@ -148,13 +149,7 @@ package final class NotaryJamfReporterWindowDelegate: NSObject, NSApplicationDel
     }
 
     @objc package func showAboutPanel() {
-        let options: [NSApplication.AboutPanelOptionKey: Any] = [
-            .applicationName: "Notary",
-            .applicationVersion: NotaryVersion.marketingVersion,
-            .version: NotaryVersion.label,
-            .credits: NSAttributedString(string: "Released under Apache-2.0 License. All rights reserved.")
-        ]
-        NSApp.orderFrontStandardAboutPanel(options: options)
+        NotaryAboutPanel.show(applicationName: "Notary")
         ensureAppPresentation()
     }
 

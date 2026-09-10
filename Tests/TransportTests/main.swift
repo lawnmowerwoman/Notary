@@ -13,6 +13,13 @@ enum TransportRegressionTests {
         reporterAndConfiguratorCapabilitiesAreIndependent()
         securePlistStorePreservesAppToken()
         machineIdentifierIsStableSaltedHash()
+        lastContactTimestampUsesUTCISO8601Format()
+        successfulTransportRecordsLastContactTimestamp()
+        failedTransportDoesNotAdvanceLastContactTimestamp()
+        laterSuccessfulTransportAdvancesLastContactTimestamp()
+        localEvaluationDoesNotModifyLastContactTimestamp()
+        lastContactTimestampSurvivesStateReload()
+        transportProofValuesPreserveExistingComplianceFields()
         print("Transport regression tests passed")
     }
 
@@ -113,6 +120,134 @@ enum TransportRegressionTests {
         expect(first != HardwareInfo.serialNumber(), "machine identifier is not derived from the serial number")
     }
 
+    static func lastContactTimestampUsesUTCISO8601Format() {
+        let date = Date(timeIntervalSince1970: 1_789_978_671)
+        let value = TransportTimestampFormat.extensionAttributeValue(for: date)
+        expect(value == "2026-09-21T08:17:51Z", "last contact timestamp is deterministic UTC ISO 8601")
+    }
+
+    static func successfulTransportRecordsLastContactTimestamp() {
+        let date = Date(timeIntervalSince1970: 1_789_978_671)
+        let proof = makeProof(generatedAt: date)
+        var state = RunnerState()
+
+        Transporter.applyTransportOutcome(
+            didCompleteTransport: true,
+            proof: proof,
+            state: &state,
+            at: date,
+            reportPercent: false
+        )
+
+        expect(state.lastTransportUpdateAt == date, "successful transport records last contact date")
+        expect(
+            TransportTimestampFormat.extensionAttributeValue(for: state.lastTransportUpdateAt ?? .distantPast) == "2026-09-21T08:17:51Z",
+            "successful transport date formats as the Jamf last contact value"
+        )
+    }
+
+    static func failedTransportDoesNotAdvanceLastContactTimestamp() {
+        let previous = Date(timeIntervalSince1970: 1_789_900_000)
+        let attempted = Date(timeIntervalSince1970: 1_789_978_671)
+        let proof = makeProof(generatedAt: attempted)
+        var state = RunnerState()
+        state.lastTransportUpdateAt = previous
+
+        Transporter.applyTransportOutcome(
+            didCompleteTransport: false,
+            proof: proof,
+            state: &state,
+            at: attempted,
+            reportPercent: false
+        )
+
+        expect(state.lastTransportUpdateAt == previous, "failed transport keeps previous last contact date")
+    }
+
+    static func laterSuccessfulTransportAdvancesLastContactTimestamp() {
+        let first = Date(timeIntervalSince1970: 1_789_900_000)
+        let later = Date(timeIntervalSince1970: 1_789_978_671)
+        let proof = makeProof(generatedAt: later)
+        var state = RunnerState()
+        state.lastTransportUpdateAt = first
+
+        Transporter.applyTransportOutcome(
+            didCompleteTransport: true,
+            proof: proof,
+            state: &state,
+            at: later,
+            reportPercent: false
+        )
+
+        expect(state.lastTransportUpdateAt == later, "later successful transport advances last contact date")
+    }
+
+    static func localEvaluationDoesNotModifyLastContactTimestamp() {
+        let previous = Date(timeIntervalSince1970: 1_789_900_000)
+        let evaluatedAt = Date(timeIntervalSince1970: 1_789_978_671)
+        let proof = makeProof(generatedAt: evaluatedAt)
+        var state = RunnerState()
+        state.lastTransportUpdateAt = previous
+
+        _ = Transporter.decide(
+            proof: proof,
+            state: state,
+            at: evaluatedAt,
+            heartbeatInterval: 60 * 60,
+            reportPercent: false
+        )
+
+        expect(state.lastTransportUpdateAt == previous, "local evaluation and transport decision do not update last contact")
+    }
+
+    static func lastContactTimestampSurvivesStateReload() {
+        let root = URL(fileURLWithPath: NSTemporaryDirectory(), isDirectory: true)
+            .appendingPathComponent("notary-last-contact-\(UUID().uuidString)", isDirectory: true)
+        let plist = root.appendingPathComponent("notary.plist", isDirectory: false)
+        defer { try? FileManager.default.removeItem(at: root) }
+
+        do {
+            try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+            let store = SecurePlistStore<RunnerState>(
+                preservedExternalKeys: ["apptoken", NotaryActivationCode.key],
+                rootURL: plist,
+                tmpURL: plist
+            )
+            var state = RunnerState()
+            state.lastTransportUpdateAt = Date(timeIntervalSince1970: 1_789_978_671)
+            try store.save(state)
+
+            let reloaded = try store.load()
+            expect(reloaded?.lastTransportUpdateAt == state.lastTransportUpdateAt, "last contact survives persisted state reload")
+        } catch {
+            fputs("Test failed: last contact persistence threw \(error)\n", stderr)
+            Foundation.exit(1)
+        }
+    }
+
+    static func transportProofValuesPreserveExistingComplianceFields() {
+        let request = makeRequest(shouldTransport: true)
+
+        expect(request.proofValues.runner == "OK", "runner proof value remains unchanged")
+        expect(request.proofValues.issues == "EMPTY", "issues proof value remains unchanged")
+        expect(request.proofValues.compliance == "PASSED", "compliance proof value remains unchanged")
+        expect(request.proofValues.lastContact == "2026-09-21T08:17:51Z", "last contact proof value is additive")
+    }
+
+    static func makeProof(generatedAt: Date) -> NotaryProof {
+        NotaryProof(
+            generatedAt: generatedAt,
+            passedCount: 1,
+            failedCount: 0,
+            unknownCount: 0,
+            timedOutCount: 0,
+            skippedCount: 0,
+            hardFailCount: 0,
+            compliancePercent: 100,
+            issueNames: []
+        )
+    }
+
     static func makeRequest(shouldTransport: Bool) -> TransportRequest {
         TransportRequest(
             shouldTransport: shouldTransport,
@@ -133,7 +268,8 @@ enum TransportRegressionTests {
                 issues: "EMPTY",
                 compliance: "PASSED",
                 percent: nil,
-                connection: nil
+                connection: nil,
+                lastContact: "2026-09-21T08:17:51Z"
             )
         )
     }

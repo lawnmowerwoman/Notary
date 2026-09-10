@@ -53,7 +53,8 @@ case "public", "dummy":
     .target(
       name: "NotaryReporterImplementation",
       dependencies: [
-        "NotaryCore"
+        "NotaryCore",
+        "NotaryAboutUI"
       ],
       path: "Sources/NotaryReporterImplementation"
     )
@@ -67,7 +68,8 @@ case "confidential":
     .target(
       name: "NotaryReporterImplementation",
       dependencies: [
-        "NotaryCore"
+        "NotaryCore",
+        "NotaryAboutUI"
       ],
       path: confidentialReporterPath
     )
@@ -186,6 +188,13 @@ let package = Package(
       ],
       swiftSettings: notaryCoreSwiftSettings
     ),
+    .target(
+      name: "NotaryAboutUI",
+      dependencies: [
+        "NotaryCore"
+      ],
+      path: "Sources/NotaryAboutUI"
+    ),
     .executableTarget(
       name: "notary",
       dependencies: [
@@ -199,6 +208,7 @@ let package = Package(
       name: "NotaryApp",
       dependencies: [
         "NotaryCore",
+        "NotaryAboutUI",
         reporterDependency
       ],
       path: "Sources/NotaryRunner/UI"
