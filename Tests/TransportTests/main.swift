@@ -13,6 +13,8 @@ enum TransportRegressionTests {
         reporterAndConfiguratorCapabilitiesAreIndependent()
         securePlistStorePreservesAppToken()
         machineIdentifierIsStableSaltedHash()
+        xprotectCheckSkipsOnMacOS27()
+        xprotectCheckDoesNotAutoSkipBeforeMacOS27()
         lastContactTimestampUsesUTCISO8601Format()
         successfulTransportRecordsLastContactTimestamp()
         failedTransportDoesNotAdvanceLastContactTimestamp()
@@ -118,6 +120,19 @@ enum TransportRegressionTests {
         expect(first?.count == 64, "machine identifier is a SHA-256 hex digest")
         expect(first != rawUUID, "machine identifier never exposes raw IOPlatformUUID")
         expect(first != HardwareInfo.serialNumber(), "machine identifier is not derived from the serial number")
+    }
+
+    static func xprotectCheckSkipsOnMacOS27() {
+        let result = checkXProtectCLI(osVersion: OperatingSystemVersion(majorVersion: 27, minorVersion: 0, patchVersion: 0))
+        expect(result.status == .skipped, "xprotect check is skipped on macOS 27")
+        expect(result.details.localizedCaseInsensitiveContains("macOS 27"), "xprotect skip explains macOS 27 behavior")
+    }
+
+    static func xprotectCheckDoesNotAutoSkipBeforeMacOS27() {
+        expect(
+            shouldSkipXProtectCLI(osVersion: OperatingSystemVersion(majorVersion: 26, minorVersion: 6, patchVersion: 0)) == false,
+            "xprotect check is not force-skipped before macOS 27"
+        )
     }
 
     static func lastContactTimestampUsesUTCISO8601Format() {

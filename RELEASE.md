@@ -103,11 +103,11 @@ Ein Release sollte kurz dokumentieren:
 - Deploy-/Policy-Hinweise, wenn sich der Confidential Deployment Workflow oder das LaunchDaemon-Verhalten geändert haben
 - bekannte Einschränkungen oder Folgearbeiten
 
-## Aktueller Beta-Kandidat
+## Aktueller Release
 
-- Version: `2.1.1`
-- Build: `1B36a`
-- Paket: `dist/notary-2.1.1-1B36a.pkg`
+- Version: `2.1`
+- Build: `1B37`
+- Paket: `dist/notary-2.1-1B37.pkg`
 - Build-Typ: Confidential Release Build
 - Transport: confidential implementation
 - Reporter: confidential implementation
@@ -117,7 +117,7 @@ Ein Release sollte kurz dokumentieren:
 - Staple: valid
 - Gatekeeper: `accepted`, `source=Notarized Developer ID`
 - Größe: `3.1M`
-- SHA-256: `fbacfb6863bd69afdeccfdc1da5a3ab24de75935387edf6a3da5035278e17ee9`
+- SHA-256: `e108d6a357d5fc5b569685af146d44324781ab4e122433d8592b0b8640dab72f`
 
 Hinweis: Ein GitHub Beta-Release darf erst erstellt werden, wenn der zugehörige
 öffentliche Source-Stand bereinigt ist. GitHub erzeugt automatisch Source

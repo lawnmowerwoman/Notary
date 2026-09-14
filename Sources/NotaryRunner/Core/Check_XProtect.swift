@@ -1,5 +1,9 @@
 import Foundation
 
+package func shouldSkipXProtectCLI(osVersion: OperatingSystemVersion = ProcessInfo.processInfo.operatingSystemVersion) -> Bool {
+  osVersion.majorVersion >= 27
+}
+
 func xprotectLocalVersion() -> String? {
   guard let r = try? Shell.run("/usr/bin/xprotect", ["version"]) else { return nil }
   // "Version: 5330 Installed: ..."
@@ -22,7 +26,11 @@ func xprotectLatestVersion() -> String? {
   return String(s[g])
 }
 
-func checkXProtectCLI() -> CheckResult {
+package func checkXProtectCLI(osVersion: OperatingSystemVersion = ProcessInfo.processInfo.operatingSystemVersion) -> CheckResult {
+  if shouldSkipXProtectCLI(osVersion: osVersion) {
+    return .init(name: "XProtect", status: .skipped, details: "skipped on macOS 27 or newer; xprotect check is currently unreliable")
+  }
+
   // Ensure tool exists
   if !FileManager.default.isExecutableFile(atPath: "/usr/bin/xprotect") {
     return .init(name: "XProtect", status: .unknown, details: "xprotect CLI not found")
@@ -46,7 +54,11 @@ func checkXProtectCLI() -> CheckResult {
   return .init(name: "XProtect", status: .unknown, details: "unable to determine local version")
 }
 
-func enforceXProtectCLI(logger: HardenLogger) -> CheckResult {
+func enforceXProtectCLI(logger: HardenLogger, osVersion: OperatingSystemVersion = ProcessInfo.processInfo.operatingSystemVersion) -> CheckResult {
+  if shouldSkipXProtectCLI(osVersion: osVersion) {
+    return .init(name: "XProtect", status: .skipped, details: "skipped on macOS 27 or newer; xprotect update is currently disabled")
+  }
+
   do {
     _ = try Shell.run("/usr/bin/xprotect", ["update"])
   } catch {
