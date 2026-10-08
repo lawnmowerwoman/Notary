@@ -40,7 +40,7 @@ enum NotaryGUI {
             )
             return
         }
-        guard NotaryAppTokenHandler.evaluate().allowsConfigurator else {
+        guard NotaryAppTokenHandler.allowsFeatureForUI(NotaryTokenFeature.configurator) else {
             showModuleUnavailableWindow(
                 title: "Configurator Authorization Required",
                 message: "This App Token does not include the Configurator capability."
@@ -296,14 +296,14 @@ enum NotaryGUI {
     fileprivate static func canOpenConfigurator() -> Bool {
         isCurrentUserAdmin() &&
         NotaryBuildCapabilities.hasConfigurator &&
-        NotaryAppTokenHandler.evaluate().allowsConfigurator
+        NotaryAppTokenHandler.allowsFeatureForUI(NotaryTokenFeature.configurator)
     }
 
     fileprivate static func reporterAvailability() -> NotaryReporterAvailability {
         guard NotaryBuildCapabilities.hasReporter else {
             return .buildUnavailable
         }
-        guard NotaryAppTokenHandler.evaluate().allowsReporter else {
+        guard NotaryAppTokenHandler.allowsFeatureForUI(NotaryTokenFeature.reporter) else {
             return .unauthorized
         }
         return .available

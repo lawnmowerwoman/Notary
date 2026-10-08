@@ -4,6 +4,11 @@ Alle wesentlichen Änderungen an Notary sollen hier in knapper Form dokumentiert
 
 ## Unreleased
 
+- Öffentliche Beta `2.2 (1C42m)`: Ministry-Licensing-Check-in mit sicherem Offline-Token-Cache, Drei-Minuten-Verläufe für Netzwerk und CPU im Menubar-Element, reguläre XProtect-Auswertung ab macOS 27.2 sowie Verbesserungen an Stabilität und Performance. Confidential Paket signiert, notarisiert und gestapled. SHA-256: `0be393d1a396efe46a516a37e3ae3ed4195ed6e0e29e706ffd154d06f96f628f`.
+- 1C-Beta: Server-App-Token und tatsächliche Token-Version werden atomar in der bestehenden privaten Plist gespeichert. Ein gültiger Cache bleibt bei Netzwerk-/TLS-/Serverfehlern nutzbar; bestätigte Lizenzablehnungen bleiben auch nach Neustarts wirksam. Server-Token haben für den konfigurierten Aktivierungscode Vorrang vor älteren Profil-Token. GUI-Features übernehmen die vom Runner geprüften Freigaben aus dem rootgeschützten Report.
+- Licensing-Check-In fuer Notary 1C vorbereitet: Runner kann mit konfiguriertem Activation Code bei `license.ministryofcode.de` ein kurzlebiges App Token abrufen und im bestehenden lokalen Token-Cache speichern.
+- Menu-Bar-Element zeigt kompakte 3-Minuten-Verlaufsgrafiken für Netzwerkempfang/-versand und CPU-Auslastung.
+- XProtect-Auswertung für macOS 27.2 wieder aktiviert: Notary überspringt `xprotect check` nur noch für die betroffenen macOS-27.0/27.1-Builds.
 - Release `2.1 (1B37)` veröffentlicht: App-Token-Unterstützung mit Feature-Gating, persistenter Activation Code, Menu-Bar-Status, macOS-27-Start/Stop-Härtung, Jamf-Last-Contact-Reporting und öffentliches Deploy-Script mit `Notary Last Contact`-EA. SHA-256: `e108d6a357d5fc5b569685af146d44324781ab4e122433d8592b0b8640dab72f`.
 - `xprotect check` wird unter macOS 27 und neuer übersprungen und als `SKIP` bewertet, weil Apples CLI dort `XProtectUpdateError Code=11` melden kann.
 - Beta-Kandidat `2.1.1 (1B36a)` veröffentlicht: Activation-Code-Persistenz, App-Token-gesteuerte Features, Menu-Bar-Status, macOS-27-Start/Stop-Härtung, Jamf-Last-Contact-Reporting und öffentliches Deploy-Script mit `Notary Last Contact`-EA. SHA-256: `fbacfb6863bd69afdeccfdc1da5a3ab24de75935387edf6a3da5035278e17ee9`.

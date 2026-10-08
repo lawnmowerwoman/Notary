@@ -198,6 +198,7 @@ let package = Package(
     .executableTarget(
       name: "notary",
       dependencies: [
+        "AppTokenKit",
         "NotaryCore",
         transportDependency,
         .product(name: "ArgumentParser", package: "swift-argument-parser")

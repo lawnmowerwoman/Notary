@@ -21,11 +21,12 @@ package struct NotaryPublicReport: Codable {
     package let hardwareModel: String?
     package let managementHost: String?
     package let managementComputerID: Int?
-    package let activationCode: String?
-    package let appTokenCustomerName: String?
-    package let appTokenActivationCode: String?
-    package let appTokenValidUntil: String?
-    package let appTokenFeatures: [String]
+    package var activationCode: String?
+    package var appTokenCustomerName: String?
+    package var appTokenActivationCode: String?
+    package var appTokenValidUntil: String?
+    package var appTokenFeatures: [String]
+    package var appTokenServerManaged: Bool
 
     enum CodingKeys: String, CodingKey {
         case generatedAt, lastRunAt, lastTransportUpdateAt
@@ -34,7 +35,7 @@ package struct NotaryPublicReport: Codable {
         case marketingVersion, versionLabel, osVersion
         case serialNumber, hardwareModel, managementHost, managementComputerID
         case activationCode
-        case appTokenCustomerName, appTokenActivationCode, appTokenValidUntil, appTokenFeatures
+        case appTokenCustomerName, appTokenActivationCode, appTokenValidUntil, appTokenFeatures, appTokenServerManaged
     }
 
     package init(
@@ -61,7 +62,8 @@ package struct NotaryPublicReport: Codable {
         appTokenCustomerName: String? = nil,
         appTokenActivationCode: String? = nil,
         appTokenValidUntil: String? = nil,
-        appTokenFeatures: [String] = []
+        appTokenFeatures: [String] = [],
+        appTokenServerManaged: Bool = false
     ) {
         self.generatedAt = generatedAt
         self.lastRunAt = lastRunAt
@@ -87,6 +89,7 @@ package struct NotaryPublicReport: Codable {
         self.appTokenActivationCode = appTokenActivationCode
         self.appTokenValidUntil = appTokenValidUntil
         self.appTokenFeatures = appTokenFeatures
+        self.appTokenServerManaged = appTokenServerManaged
     }
 
     package init(from decoder: Decoder) throws {
@@ -115,6 +118,16 @@ package struct NotaryPublicReport: Codable {
         appTokenActivationCode = try container.decodeIfPresent(String.self, forKey: .appTokenActivationCode)
         appTokenValidUntil = try container.decodeIfPresent(String.self, forKey: .appTokenValidUntil)
         appTokenFeatures = try container.decodeIfPresent([String].self, forKey: .appTokenFeatures) ?? []
+        appTokenServerManaged = try container.decodeIfPresent(Bool.self, forKey: .appTokenServerManaged) ?? false
+    }
+
+    package mutating func applyLicenseAuthorization(_ authorization: NotaryAppTokenAuthorization, activationCode: String?) {
+        self.activationCode = activationCode
+        appTokenServerManaged = authorization.serverManaged
+        appTokenCustomerName = authorization.isAuthorized ? authorization.diagnostics.payload?.customerName : nil
+        appTokenActivationCode = authorization.isAuthorized ? authorization.diagnostics.payload?.activationCode : nil
+        appTokenValidUntil = authorization.isAuthorized ? authorization.diagnostics.payload?.validUntil : nil
+        appTokenFeatures = authorization.isAuthorized ? authorization.diagnostics.recognizedFeatures : []
     }
 }
 
@@ -148,6 +161,28 @@ package final class NotaryPublicReportStore {
         guard fm.fileExists(atPath: url.path) else { return nil }
         let data = try Data(contentsOf: url, options: [.mappedIfSafe])
         return try PropertyListDecoder().decode(NotaryPublicReport.self, from: data)
+    }
+
+    package func loadTrustedForAuthorization() throws -> NotaryPublicReport? {
+        // GUI users cannot read the 0600 runner cache. Trust only the root-owned
+        // runner projection, never the user's writable /tmp report fallback.
+        for url in [rootURL, rootURL.deletingLastPathComponent()] {
+            guard let attributes = try? fm.attributesOfItem(atPath: url.path),
+                  (attributes[.ownerAccountID] as? NSNumber)?.intValue == 0,
+                  let mode = attributes[.posixPermissions] as? NSNumber,
+                  mode.intValue & 0o022 == 0,
+                  attributes[.type] as? FileAttributeType != .typeSymbolicLink else { return nil }
+        }
+        let data = try Data(contentsOf: rootURL)
+        return try PropertyListDecoder().decode(NotaryPublicReport.self, from: data)
+    }
+
+    package func updateLicenseProjection(_ authorization: NotaryAppTokenAuthorization, activationCode: String?) throws {
+        guard isRoot, var report = try loadTrustedForAuthorization() else { return }
+        report.applyLicenseAuthorization(authorization, activationCode: activationCode)
+        // A licensing response updates only licensing information, not the last
+        // compliance evaluation or Jamf contact timestamps.
+        try save(report)
     }
 
     package func save(_ report: NotaryPublicReport) throws {

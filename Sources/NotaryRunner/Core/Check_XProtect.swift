@@ -1,7 +1,7 @@
 import Foundation
 
 package func shouldSkipXProtectCLI(osVersion: OperatingSystemVersion = ProcessInfo.processInfo.operatingSystemVersion) -> Bool {
-  osVersion.majorVersion >= 27
+  osVersion.majorVersion == 27 && osVersion.minorVersion < 2
 }
 
 func xprotectLocalVersion() -> String? {
@@ -28,7 +28,7 @@ func xprotectLatestVersion() -> String? {
 
 package func checkXProtectCLI(osVersion: OperatingSystemVersion = ProcessInfo.processInfo.operatingSystemVersion) -> CheckResult {
   if shouldSkipXProtectCLI(osVersion: osVersion) {
-    return .init(name: "XProtect", status: .skipped, details: "skipped on macOS 27 or newer; xprotect check is currently unreliable")
+    return .init(name: "XProtect", status: .skipped, details: "skipped on macOS 27.0/27.1; xprotect check is unreliable on affected builds")
   }
 
   // Ensure tool exists
@@ -56,7 +56,7 @@ package func checkXProtectCLI(osVersion: OperatingSystemVersion = ProcessInfo.pr
 
 func enforceXProtectCLI(logger: HardenLogger, osVersion: OperatingSystemVersion = ProcessInfo.processInfo.operatingSystemVersion) -> CheckResult {
   if shouldSkipXProtectCLI(osVersion: osVersion) {
-    return .init(name: "XProtect", status: .skipped, details: "skipped on macOS 27 or newer; xprotect update is currently disabled")
+    return .init(name: "XProtect", status: .skipped, details: "skipped on macOS 27.0/27.1; xprotect update is disabled on affected builds")
   }
 
   do {

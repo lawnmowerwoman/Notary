@@ -105,6 +105,18 @@ Ein Release sollte kurz dokumentieren:
 
 ## Aktueller Release
 
+Aktuelle öffentliche Beta:
+
+- Version: `2.2`, Build: `1C42m`
+- Tag: `1C42m-v2.2-beta`
+- Paket: `dist/notary-2.2-1C42m.pkg`
+- Vollständiger Confidential Build; öffentliche Quellen mit Dummy-Implementierungen
+- Notarisierung: Accepted; Staple: valid; Gatekeeper: accepted
+- SHA-256: `0be393d1a396efe46a516a37e3ae3ed4195ed6e0e29e706ffd154d06f96f628f`
+- Release Notes: [1C42m](Dokumentation/Release-Notes-1C42m.md)
+
+Aktueller stabiler Release:
+
 - Version: `2.1`
 - Build: `1B37`
 - Paket: `dist/notary-2.1-1B37.pkg`

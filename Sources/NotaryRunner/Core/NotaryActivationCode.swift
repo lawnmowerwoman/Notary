@@ -23,20 +23,22 @@ package enum NotaryActivationCode {
         return nil
     }
 
+    package static func currentConfiguredValue() -> String? {
+        let snapshot = ManagedPrefs.snapshot(domain: "de.twocent.notary", topLevelKeys: [key])
+        if let value = firstManagedValue(rawSnapshot: snapshot) { return value }
+        if let state = try? SecurePlistStore<RunnerState>().load(), let value = normalized(state.activationCode) { return value }
+        return (try? NotaryPublicReportStore().load()).flatMap { normalized($0.activationCode) }
+    }
+
     package static func resolved(
         rawSnapshot: [String: Any],
-        state: RunnerState,
-        authorization: NotaryAppTokenAuthorization
+        state: RunnerState
     ) -> String? {
         if let managedValue = firstManagedValue(rawSnapshot: rawSnapshot) {
             return managedValue
         }
         if let stateValue = normalized(state.activationCode) {
             return stateValue
-        }
-        if authorization.diagnostics.status == .valid,
-           let tokenValue = normalized(authorization.diagnostics.payload?.activationCode) {
-            return tokenValue
         }
         return nil
     }

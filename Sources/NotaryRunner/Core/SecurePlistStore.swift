@@ -147,6 +147,61 @@ package final class SecurePlistStore<Value: Codable> {
         }
     }
 
+    package func readValues(keys: Set<String>) throws -> [String: Any] {
+        let url = effectiveURL
+        guard FileManager.default.fileExists(atPath: url.path) else { return [:] }
+        let lock = FileLock(targetURL: url)
+        try lock.lock(timeoutSeconds: 5)
+        defer { lock.unlock() }
+        let data = try Data(contentsOf: url)
+        guard let plist = try PropertyListSerialization.propertyList(from: data, options: [], format: nil) as? [String: Any] else {
+            return [:]
+        }
+        return plist.filter { keys.contains($0.key) }
+    }
+
+    package func merge(values: [String: Any]) throws {
+        guard !values.isEmpty else { return }
+
+        let url = effectiveURL
+        let directory = url.deletingLastPathComponent()
+        try ensureDirectoryExists(directory)
+
+        let lock = FileLock(targetURL: url)
+        do {
+            try lock.lock(timeoutSeconds: 5)
+        } catch {
+            throw StoreError.lockFailed(url, error)
+        }
+        defer { lock.unlock() }
+
+        var plist: [String: Any] = [:]
+        if FileManager.default.fileExists(atPath: url.path) {
+            do {
+                let data = try Data(contentsOf: url, options: [.mappedIfSafe])
+                if !data.isEmpty {
+                    plist = try PropertyListSerialization.propertyList(from: data, options: [], format: nil) as? [String: Any] ?? [:]
+                }
+            } catch {
+                throw StoreError.readFailed(error)
+            }
+        }
+
+        for (key, value) in values {
+            plist[key] = value
+        }
+
+        do {
+            let data = try PropertyListSerialization.data(fromPropertyList: plist, format: .binary, options: 0)
+            try atomicWrite(data: data, to: url)
+            try applySecureAttributes(to: url)
+        } catch let error as StoreError {
+            throw error
+        } catch {
+            throw StoreError.writeFailed(error)
+        }
+    }
+
     package func delete() throws {
         let url = effectiveURL
         let lock = FileLock(targetURL: url)
@@ -221,7 +276,12 @@ package final class SecurePlistStore<Value: Codable> {
             try data.write(to: tmp, options: [.completeFileProtectionUnlessOpen])
 
             // Replace target atomically (creates if missing)
-            _ = try fm.replaceItemAt(url, withItemAt: tmp, backupItemName: nil, options: [.usingNewMetadataOnly])
+            try applySecureAttributes(to: tmp)
+            if fm.fileExists(atPath: url.path) {
+                _ = try fm.replaceItemAt(url, withItemAt: tmp, backupItemName: nil, options: [.usingNewMetadataOnly])
+            } else {
+                try fm.moveItem(at: tmp, to: url)
+            }
         } catch {
             try? fm.removeItem(at: tmp)
             throw StoreError.writeFailed(error)

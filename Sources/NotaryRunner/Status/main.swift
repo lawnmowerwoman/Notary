@@ -72,9 +72,13 @@ private extension NotaryPublicComplianceState {
 
 @MainActor
 private final class NotaryStatusAppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
+    private static let telemetrySampleInterval: TimeInterval = 3
+    private static let telemetryHistoryWindow: TimeInterval = 3 * 60
+
     private let statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
     private let reportStore = NotaryPublicReportStore()
     private let telemetrySampler = TelemetrySampler()
+    private let telemetryHistory = TelemetryHistoryStore(maxAge: NotaryStatusAppDelegate.telemetryHistoryWindow)
     private let bundleVersion = StatusBundleVersion.current()
 
     private var complianceRefreshTimer: Timer?
@@ -83,7 +87,7 @@ private final class NotaryStatusAppDelegate: NSObject, NSApplicationDelegate, NS
     private var latestReport: NotaryPublicReport?
     private var latestTelemetry: TelemetrySnapshot?
     private weak var headerView: NotaryStatusHeaderView?
-    private weak var telemetryView: NotaryTelemetryTextView?
+    private weak var telemetryView: NotaryTelemetryHistoryView?
     private weak var versionView: NotaryVersionTextView?
     private var userRequestedQuit = false
     private var systemRequestedTermination = false
@@ -98,8 +102,10 @@ private final class NotaryStatusAppDelegate: NSObject, NSApplicationDelegate, NS
         )
         configureStatusItem()
         refreshCompliance()
+        refreshTelemetry()
         rebuildMenu()
         startComplianceRefreshTimer()
+        startTelemetryTimer()
     }
 
     func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
@@ -125,11 +131,9 @@ private final class NotaryStatusAppDelegate: NSObject, NSApplicationDelegate, NS
     func menuWillOpen(_ menu: NSMenu) {
         refreshCompliance()
         refreshTelemetry()
-        startTelemetryTimer()
     }
 
     func menuDidClose(_ menu: NSMenu) {
-        stopTelemetryTimer()
     }
 
     private func configureStatusItem() {
@@ -149,7 +153,7 @@ private final class NotaryStatusAppDelegate: NSObject, NSApplicationDelegate, NS
     private func startTelemetryTimer() {
         telemetryTimer?.invalidate()
 
-        let timer = Timer(timeInterval: 1, repeats: true) { [weak self] _ in
+        let timer = Timer(timeInterval: Self.telemetrySampleInterval, repeats: true) { [weak self] _ in
             Task { @MainActor in
                 self?.refreshTelemetry()
             }
@@ -175,12 +179,15 @@ private final class NotaryStatusAppDelegate: NSObject, NSApplicationDelegate, NS
 
     private func refreshTelemetry() {
         latestTelemetry = telemetrySampler.sample()
-        telemetryView?.lines = telemetryLines(from: latestTelemetry)
+        if let latestTelemetry {
+            telemetryHistory.append(latestTelemetry)
+        }
+        telemetryView?.snapshot = telemetryDisplaySnapshot()
     }
 
     private func updateVisibleViews() {
         headerView?.state = latestState
-        telemetryView?.lines = telemetryLines(from: latestTelemetry)
+        telemetryView?.snapshot = telemetryDisplaySnapshot()
         versionView?.text = versionDisplayText()
     }
 
@@ -200,7 +207,7 @@ private final class NotaryStatusAppDelegate: NSObject, NSApplicationDelegate, NS
         menu.addItem(versionItem)
         versionView = version
 
-        let telemetry = NotaryTelemetryTextView(lines: telemetryLines(from: latestTelemetry))
+        let telemetry = NotaryTelemetryHistoryView(snapshot: telemetryDisplaySnapshot())
         let telemetryItem = NSMenuItem()
         telemetryItem.view = telemetry
         menu.addItem(telemetryItem)
@@ -220,26 +227,32 @@ private final class NotaryStatusAppDelegate: NSObject, NSApplicationDelegate, NS
         return item
     }
 
-    private func telemetryLines(from snapshot: TelemetrySnapshot?) -> [String] {
-        guard let snapshot else {
-            return ["CPU waiting", "Network waiting"]
-        }
-
-        let cpuLine: String
-        if let cpu = snapshot.cpu, cpu.isPrimed {
-            cpuLine = "CPU \(formatPercent(cpu.activeFraction))"
+    private func telemetryDisplaySnapshot() -> TelemetryDisplaySnapshot {
+        let history = telemetryHistory.points
+        let latestPoint = history.last
+        let cpuText: String
+        if let cpu = latestPoint?.cpuFraction {
+            cpuText = formatPercent(cpu)
+        } else if latestTelemetry?.cpu?.isPrimed == false {
+            cpuText = "warming up"
         } else {
-            cpuLine = "CPU warming up"
+            cpuText = "waiting"
         }
 
-        let networkLine: String
-        if let network = snapshot.network, network.isPrimed {
-            networkLine = "Network up \(formatBytes(network.uploadBytesPerSecond))/s, down \(formatBytes(network.downloadBytesPerSecond))/s"
+        let networkText: String
+        if let latestPoint {
+            networkText = "↓ \(formatBytes(latestPoint.downloadBytesPerSecond))/s   ↑ \(formatBytes(latestPoint.uploadBytesPerSecond))/s"
+        } else if latestTelemetry?.network?.isPrimed == false {
+            networkText = "warming up"
         } else {
-            networkLine = "Network warming up"
+            networkText = "waiting"
         }
 
-        return [cpuLine, networkLine]
+        return TelemetryDisplaySnapshot(
+            points: history,
+            cpuText: cpuText,
+            networkText: networkText
+        )
     }
 
     private func versionDisplayText() -> String {
@@ -376,6 +389,47 @@ private enum StatusMark {
     case warning
     case xmark
     case question
+}
+
+private struct TelemetryHistoryPoint {
+    let sampledAt: Date
+    let cpuFraction: Double?
+    let uploadBytesPerSecond: Double
+    let downloadBytesPerSecond: Double
+}
+
+private struct TelemetryDisplaySnapshot {
+    let points: [TelemetryHistoryPoint]
+    let cpuText: String
+    let networkText: String
+}
+
+@MainActor
+private final class TelemetryHistoryStore {
+    private let maxAge: TimeInterval
+    private(set) var points: [TelemetryHistoryPoint] = []
+
+    init(maxAge: TimeInterval) {
+        self.maxAge = maxAge
+    }
+
+    func append(_ snapshot: TelemetrySnapshot) {
+        let cpuFraction = snapshot.cpu?.isPrimed == true ? snapshot.cpu?.activeFraction : nil
+        let uploadBytesPerSecond = snapshot.network?.isPrimed == true ? (snapshot.network?.uploadBytesPerSecond ?? 0) : 0
+        let downloadBytesPerSecond = snapshot.network?.isPrimed == true ? (snapshot.network?.downloadBytesPerSecond ?? 0) : 0
+
+        points.append(
+            TelemetryHistoryPoint(
+                sampledAt: snapshot.sampledAt,
+                cpuFraction: cpuFraction,
+                uploadBytesPerSecond: uploadBytesPerSecond,
+                downloadBytesPerSecond: downloadBytesPerSecond
+            )
+        )
+
+        let cutoff = snapshot.sampledAt.addingTimeInterval(-maxAge)
+        points.removeAll { $0.sampledAt < cutoff }
+    }
 }
 
 @MainActor
@@ -524,16 +578,16 @@ private final class NotaryVersionTextView: NSView {
 }
 
 @MainActor
-private final class NotaryTelemetryTextView: NSView {
-    var lines: [String] {
+private final class NotaryTelemetryHistoryView: NSView {
+    var snapshot: TelemetryDisplaySnapshot {
         didSet {
             needsDisplay = true
         }
     }
 
-    init(lines: [String]) {
-        self.lines = lines
-        super.init(frame: NSRect(x: 0, y: 0, width: 340, height: 54))
+    init(snapshot: TelemetryDisplaySnapshot) {
+        self.snapshot = snapshot
+        super.init(frame: NSRect(x: 0, y: 0, width: 340, height: 156))
     }
 
     required init?(coder: NSCoder) {
@@ -543,16 +597,132 @@ private final class NotaryTelemetryTextView: NSView {
     override func draw(_ dirtyRect: NSRect) {
         super.draw(dirtyRect)
 
-        let attrs: [NSAttributedString.Key: Any] = [
-            .font: NSFont.monospacedDigitSystemFont(ofSize: 11.5, weight: .regular),
+        let networkRect = NSRect(x: 16, y: 90, width: bounds.width - 32, height: 44)
+        let cpuRect = NSRect(x: 16, y: 18, width: bounds.width - 32, height: 44)
+
+        drawSectionTitle("Network", value: snapshot.networkText, in: NSRect(x: 16, y: 134, width: bounds.width - 32, height: 18))
+        drawSectionTitle("CPU", value: snapshot.cpuText, in: NSRect(x: 16, y: 66, width: bounds.width - 32, height: 18))
+
+        drawGraphBackground(in: networkRect)
+        drawNetworkGraph(in: networkRect)
+        drawGraphBackground(in: cpuRect)
+        drawCPUGraph(in: cpuRect)
+    }
+
+    private func drawSectionTitle(_ title: String, value: String, in rect: NSRect) {
+        let titleAttrs: [NSAttributedString.Key: Any] = [
+            .font: NSFont.systemFont(ofSize: 11, weight: .semibold),
+            .foregroundColor: NSColor.labelColor.withAlphaComponent(0.82)
+        ]
+        let valueAttrs: [NSAttributedString.Key: Any] = [
+            .font: NSFont.monospacedDigitSystemFont(ofSize: 10.5, weight: .regular),
             .foregroundColor: NSColor.secondaryLabelColor
         ]
 
-        for (index, line) in lines.prefix(2).enumerated() {
-            let y = bounds.maxY - 22 - CGFloat(index * 18)
-            NSAttributedString(string: line, attributes: attrs)
-                .draw(in: NSRect(x: 16, y: y, width: bounds.width - 32, height: 16))
+        NSAttributedString(string: title, attributes: titleAttrs)
+            .draw(in: NSRect(x: rect.minX, y: rect.minY + 1, width: 96, height: rect.height))
+        NSAttributedString(string: value, attributes: valueAttrs)
+            .draw(in: NSRect(x: rect.minX + 96, y: rect.minY + 1, width: rect.width - 96, height: rect.height))
+    }
+
+    private func drawGraphBackground(in rect: NSRect) {
+        let path = NSBezierPath(roundedRect: rect, xRadius: 7, yRadius: 7)
+        NSColor.controlBackgroundColor.withAlphaComponent(0.55).setFill()
+        path.fill()
+        NSColor.separatorColor.withAlphaComponent(0.42).setStroke()
+        path.lineWidth = 1
+        path.stroke()
+
+        let midline = NSBezierPath()
+        midline.move(to: NSPoint(x: rect.minX + 6, y: rect.midY))
+        midline.line(to: NSPoint(x: rect.maxX - 6, y: rect.midY))
+        NSColor.separatorColor.withAlphaComponent(0.22).setStroke()
+        midline.lineWidth = 1
+        midline.stroke()
+    }
+
+    private func drawNetworkGraph(in rect: NSRect) {
+        let points = snapshot.points
+        guard points.count >= 2 else {
+            drawEmptyMessage("collecting samples", in: rect)
+            return
         }
+
+        let maxBytes = max(
+            points.map(\.uploadBytesPerSecond).max() ?? 0,
+            points.map(\.downloadBytesPerSecond).max() ?? 0,
+            1
+        )
+
+        drawSeries(
+            values: points.map { $0.downloadBytesPerSecond },
+            maxValue: maxBytes,
+            color: .systemGreen,
+            in: rect
+        )
+        drawSeries(
+            values: points.map { $0.uploadBytesPerSecond },
+            maxValue: maxBytes,
+            color: .systemRed,
+            in: rect
+        )
+    }
+
+    private func drawCPUGraph(in rect: NSRect) {
+        guard snapshot.points.contains(where: { $0.cpuFraction != nil }) else {
+            drawEmptyMessage("collecting samples", in: rect)
+            return
+        }
+
+        let values = snapshot.points.map { $0.cpuFraction ?? 0 }
+        guard values.count >= 2 else {
+            drawEmptyMessage("collecting samples", in: rect)
+            return
+        }
+
+        drawSeries(
+            values: values,
+            maxValue: 1,
+            color: .systemBlue,
+            in: rect
+        )
+    }
+
+    private func drawSeries(values: [Double], maxValue: Double, color: NSColor, in rect: NSRect) {
+        guard values.count >= 2 else {
+            return
+        }
+
+        let insetRect = rect.insetBy(dx: 7, dy: 6)
+        let denominator = CGFloat(max(values.count - 1, 1))
+        let path = NSBezierPath()
+        path.lineWidth = 1.8
+        path.lineJoinStyle = .round
+        path.lineCapStyle = .round
+
+        for (index, value) in values.enumerated() {
+            let normalized = CGFloat(max(0, min(1, value / maxValue)))
+            let x = insetRect.minX + (CGFloat(index) / denominator) * insetRect.width
+            let y = insetRect.minY + normalized * insetRect.height
+            let point = NSPoint(x: x, y: y)
+            if index == 0 {
+                path.move(to: point)
+            } else {
+                path.line(to: point)
+            }
+        }
+
+        color.withAlphaComponent(0.88).setStroke()
+        path.stroke()
+    }
+
+    private func drawEmptyMessage(_ message: String, in rect: NSRect) {
+        let attrs: [NSAttributedString.Key: Any] = [
+            .font: NSFont.systemFont(ofSize: 10.5, weight: .regular),
+            .foregroundColor: NSColor.tertiaryLabelColor
+        ]
+        NSAttributedString(string: message, attributes: attrs)
+            .draw(centeredIn: rect)
     }
 }
 

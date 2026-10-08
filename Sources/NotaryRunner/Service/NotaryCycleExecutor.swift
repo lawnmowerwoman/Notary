@@ -1,3 +1,4 @@
+import AppTokenKit
 import Foundation
 import NotaryCore
 import NotaryTransportImplementation
@@ -16,7 +17,7 @@ enum NotaryCycleExecutor {
 
         let store = SecurePlistStore<RunnerState>(
             logger: logger,
-            preservedExternalKeys: ["apptoken", NotaryActivationCode.key]
+            preservedExternalKeys: NotaryLicenseCache.preservedKeys
         )
         var state = try store.load() ?? RunnerState()
 
@@ -52,14 +53,41 @@ enum NotaryCycleExecutor {
             )
         }
 
-        let appTokenAuthorization = NotaryAppTokenHandler.evaluate()
-        NotaryAppTokenHandler.log(appTokenAuthorization, logger: logger)
-        if let activationCode = NotaryActivationCode.resolved(
+        let activationCode = NotaryActivationCode.resolved(
             rawSnapshot: configurationSnapshot.rawSnapshot,
-            state: state,
-            authorization: appTokenAuthorization
-        ) {
+            state: state
+        )
+        let licenseCache = NotaryLicenseCache(store: store)
+        let candidate = NotaryTokenSources.resolver().resolve()
+        var appTokenAuthorization = NotaryAppTokenHandler.evaluate(activationCode: activationCode, candidate: candidate, cache: licenseCache)
+        do {
+            try licenseCache.seedManagedToken(candidate: candidate, authorization: appTokenAuthorization, activationCode: activationCode)
+        } catch { logger.warn("Unable to bootstrap local App Token cache.") }
+        if let activationCode {
             state.activationCode = activationCode
+            // Persist the configured identity before networking or local evaluation.
+            try store.merge(values: [NotaryActivationCode.key: activationCode])
+            let result = await refreshAppTokenIfNeeded(
+                activationCode: activationCode,
+                currentAuthorization: appTokenAuthorization,
+                cache: licenseCache,
+                logger: logger
+            )
+            appTokenAuthorization = NotaryAppTokenHandler.evaluate(activationCode: activationCode, candidate: candidate, cache: licenseCache)
+            switch result {
+            case .activationCodeUnknown, .licenseRejected:
+                appTokenAuthorization = NotaryAppTokenAuthorization(diagnostics: appTokenAuthorization.diagnostics,
+                                                                    licenseRestriction: "license_rejected", serverManaged: true)
+            default: break
+            }
+        } else {
+            logger.info("Licensing check-in skipped: no Activation Code configured.")
+        }
+        NotaryAppTokenHandler.log(appTokenAuthorization, logger: logger)
+        if appTokenAuthorization.serverManaged {
+            do {
+                try NotaryPublicReportStore().updateLicenseProjection(appTokenAuthorization, activationCode: activationCode)
+            } catch { logger.warn("Unable to update the public licensing projection.") }
         }
         if effectiveRemoteTransport, !appTokenAuthorization.allowsTransporter {
             logger.warn("Remote transport disabled because the App Token does not grant the transporter capability.")
@@ -270,10 +298,11 @@ enum NotaryCycleExecutor {
                 managementHost: jamfProURL?.host,
                 managementComputerID: state.computerID,
                 activationCode: state.activationCode,
-                appTokenCustomerName: appTokenAuthorization.diagnostics.status == .valid ? appTokenAuthorization.diagnostics.payload?.customerName : nil,
-                appTokenActivationCode: appTokenAuthorization.diagnostics.status == .valid ? appTokenAuthorization.diagnostics.payload?.activationCode : nil,
-                appTokenValidUntil: appTokenAuthorization.diagnostics.status == .valid ? appTokenAuthorization.diagnostics.payload?.validUntil : nil,
-                appTokenFeatures: appTokenAuthorization.diagnostics.status == .valid ? appTokenAuthorization.diagnostics.recognizedFeatures : []
+                appTokenCustomerName: appTokenAuthorization.isAuthorized ? appTokenAuthorization.diagnostics.payload?.customerName : nil,
+                appTokenActivationCode: appTokenAuthorization.isAuthorized ? appTokenAuthorization.diagnostics.payload?.activationCode : nil,
+                appTokenValidUntil: appTokenAuthorization.isAuthorized ? appTokenAuthorization.diagnostics.payload?.validUntil : nil,
+                appTokenFeatures: appTokenAuthorization.isAuthorized ? appTokenAuthorization.diagnostics.recognizedFeatures : [],
+                appTokenServerManaged: appTokenAuthorization.serverManaged
             )
             try NotaryPublicReportStore().save(publicReport)
         } catch {
@@ -289,6 +318,44 @@ enum NotaryCycleExecutor {
             logger.warn("[SHUTDOWN] Aborting \(phase) due to \(reason)")
             throw ShutdownError.requested(reason: reason)
         }
+    }
+
+    private static func refreshAppTokenIfNeeded(
+        activationCode: String,
+        currentAuthorization: NotaryAppTokenAuthorization,
+        cache: NotaryLicenseCache,
+        logger: HardenLogger
+    ) async -> NotaryLicenseClientResult {
+        guard let machineIdentifier = NotaryMachineIdentity.current() else {
+            logger.warn("Licensing check-in skipped: unable to determine Machine Identifier.")
+            return .skipped("machine_identifier_unavailable")
+        }
+
+        let result = await NotaryLicenseClient(cache: cache).checkIn(
+            activationCode: activationCode,
+            machineIdentifier: machineIdentifier,
+            currentAuthorization: currentAuthorization,
+            notaryVersion: NotaryVersion.label
+        )
+
+        switch result {
+        case .tokenUpdated(let tokenId, let tokenVersion, let validUntil):
+            logger.info("Licensing check-in updated App Token: tokenId=\(tokenId), tokenVersion=\(tokenVersion), validUntil=\(validUntil)")
+        case .tokenCurrent:
+            logger.info("Licensing check-in confirmed current App Token.")
+        case .activationCodeUnknown:
+            logger.warn("Licensing check-in failed: Activation Code is unknown.")
+        case .licenseRejected(let reason):
+            logger.warn("Licensing check-in rejected: \(reason)")
+        case .skipped(let reason):
+            logger.info("Licensing check-in skipped: \(reason)")
+        case .failed(let reason):
+            logger.warn("Licensing check-in failed: \(reason)")
+            if currentAuthorization.isAuthorized {
+                logger.info("Licensing offline fallback: retaining the locally validated App Token.")
+            }
+        }
+        return result
     }
 
     private static func deferForTransientManagedConfigGapIfNeeded(
