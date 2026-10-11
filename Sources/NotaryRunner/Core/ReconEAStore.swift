@@ -1,4 +1,5 @@
 import Foundation
+import Darwin
 
 enum ReconEAStoreError: Error {
     case readFailed(Error)
@@ -57,7 +58,16 @@ package final class ReconEAStore {
         let tmp = dir.appendingPathComponent(".\(url.lastPathComponent).tmp.\(UUID().uuidString)")
 
         do {
-            try data.write(to: tmp, options: [.completeFileProtectionUnlessOpen])
+            try data.write(to: tmp, options: [.completeFileProtectionUntilFirstUserAuthentication])
+            var attributes: [FileAttributeKey: Any] = [
+                .posixPermissions: NSNumber(value: 0o600),
+                .protectionKey: FileProtectionType.completeUntilFirstUserAuthentication
+            ]
+            if geteuid() == 0 {
+                attributes[.ownerAccountID] = NSNumber(value: 0)
+                attributes[.groupOwnerAccountID] = NSNumber(value: 0)
+            }
+            try fm.setAttributes(attributes, ofItemAtPath: tmp.path)
             _ = try fm.replaceItemAt(url, withItemAt: tmp, backupItemName: nil, options: [.usingNewMetadataOnly])
         } catch {
             try? fm.removeItem(at: tmp)

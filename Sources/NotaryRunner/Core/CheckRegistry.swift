@@ -35,6 +35,7 @@ enum CheckRegistry {
                 section: "CoreSecurity",
                 key: "CheckSIPStatus",
                 benchmarkID: "5.18",
+                executionPolicy: CheckExecutionPolicy(priority: .serviceStart),
                 timeoutSeconds: 10,
                 check: noLog { checkSIP() },
                 enforce: nil
@@ -45,6 +46,7 @@ enum CheckRegistry {
                 section: "CoreSecurity",
                 key: "CheckARStatus",
                 benchmarkID: "5.19",
+                executionPolicy: CheckExecutionPolicy(priority: .serviceStart),
                 timeoutSeconds: 10,
                 check: noLog { checkSSV() },
                 enforce: nil
@@ -55,6 +57,7 @@ enum CheckRegistry {
                 section: "CoreSecurity",
                 key: "UpdateXProtect",
                 benchmarkID: "XPR-1",
+                executionPolicy: .xprotect,
                 timeoutSeconds: 20,
                 check: noLog { checkXProtectCLI() },
                 enforce: { logger, _ in enforceXProtectCLI(logger: logger) }

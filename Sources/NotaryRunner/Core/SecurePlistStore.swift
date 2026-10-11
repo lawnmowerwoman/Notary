@@ -108,8 +108,13 @@ package final class SecurePlistStore<Value: Codable> {
 
         guard FileManager.default.fileExists(atPath: url.path) else { return nil }
 
+        let data: Data
         do {
-            let data = try Data(contentsOf: url, options: [.mappedIfSafe])
+            data = try Data(contentsOf: url, options: [.mappedIfSafe])
+        } catch {
+            throw StoreError.readFailed(error)
+        }
+        do {
             return try decoder.decode(Value.self, from: data)
         } catch {
             throw StoreError.decodeFailed(error)
@@ -219,6 +224,10 @@ package final class SecurePlistStore<Value: Codable> {
     /// Optional helper: if the file exists but permissions/owner are wrong, try to fix them.
     package func enforceSecurityIfPresent() throws {
         let url = effectiveURL
+        let lock = FileLock(targetURL: url)
+        do { try lock.lock(timeoutSeconds: 5) }
+        catch { throw StoreError.lockFailed(url, error) }
+        defer { lock.unlock() }
         guard FileManager.default.fileExists(atPath: url.path) else { return }
         try applySecureAttributes(to: url)
     }
@@ -272,8 +281,8 @@ package final class SecurePlistStore<Value: Codable> {
         let tmp = dir.appendingPathComponent(".\(url.lastPathComponent).tmp.\(UUID().uuidString)")
 
         do {
-            // Write temp file. (If file protection is unsupported in your context, remove the option.)
-            try data.write(to: tmp, options: [.completeFileProtectionUnlessOpen])
+            // Class C permits background service access while the macOS volume is mounted.
+            try data.write(to: tmp, options: [.completeFileProtectionUntilFirstUserAuthentication])
 
             // Replace target atomically (creates if missing)
             try applySecureAttributes(to: tmp)
@@ -288,13 +297,14 @@ package final class SecurePlistStore<Value: Codable> {
         }
     }
 
-    /// Applies mode 0600 and (when root) owner/group 0:0.
+    /// Applies service-compatible Data Protection, mode 0600 and root ownership.
     private func applySecureAttributes(to url: URL) throws {
         let fm = FileManager.default
 
         let perms: NSNumber = 0o600
         var attrs: [FileAttributeKey: Any] = [
-            .posixPermissions: perms
+            .posixPermissions: perms,
+            .protectionKey: FileProtectionType.completeUntilFirstUserAuthentication
         ]
 
         if isRoot {

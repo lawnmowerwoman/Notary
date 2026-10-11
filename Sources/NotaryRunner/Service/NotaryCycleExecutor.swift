@@ -19,6 +19,8 @@ enum NotaryCycleExecutor {
             logger: logger,
             preservedExternalKeys: NotaryLicenseCache.preservedKeys
         )
+        // Migrate legacy protection without reading or replacing credentials/state.
+        try store.enforceSecurityIfPresent()
         var state = try store.load() ?? RunnerState()
 
         let configuredAPIUpdate = state.apiupdate ?? true

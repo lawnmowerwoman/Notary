@@ -9,6 +9,7 @@ struct AppTokenReferenceTests {
 
     static func main() throws {
         try validToken()
+        try signedMachineIdentifierIsBackwardCompatible()
         try renamedCustomerSameActivationCodeNewSignature()
         try expiredToken()
         try futureToken()
@@ -33,6 +34,22 @@ struct AppTokenReferenceTests {
         expect(diagnostics.status == .valid, "valid token")
         expect(diagnostics.recognizedFeatures == ["transporter"], "recognized transporter")
         expect(diagnostics.capabilities.contains("transporter"), "transporter capability")
+    }
+
+    static func signedMachineIdentifierIsBackwardCompatible() throws {
+        let original = try AppTokenCodec.decode(makeToken())
+        var payload = try JSONSerialization.jsonObject(with: original.payloadData) as! [String: Any]
+        payload["machineIdentifier"] = "pseudonymous-machine-test"
+        let data = try JSONSerialization.data(withJSONObject: payload, options: [.sortedKeys, .withoutEscapingSlashes])
+        let input = AppTokenCodec.signingInput(canonicalHeader: original.headerData, canonicalPayload: data)
+        let key = try Curve25519.Signing.PrivateKey(rawRepresentation: privateKeyData)
+        let signature = try key.signature(for: input)
+        let token = ["TAT1", b64(original.headerData), b64(data), b64(signature)].joined(separator: ".")
+        expect(validate(token).status == .valid, "additional signed machine field is accepted by existing validator")
+        payload["machineIdentifier"] = "other-machine"
+        let modified = try JSONSerialization.data(withJSONObject: payload, options: [.sortedKeys, .withoutEscapingSlashes])
+        let tampered = ["TAT1", b64(original.headerData), b64(modified), b64(signature)].joined(separator: ".")
+        expect(validate(tampered).status == .invalidSignature, "additional machine field is covered by signature")
     }
 
     static func renamedCustomerSameActivationCodeNewSignature() throws {

@@ -6,6 +6,9 @@ import NotaryTransportImplementation
 @main
 enum TransportRegressionTests {
     static func main() async {
+        CheckExecutionPolicyTests.run()
+        HardwareInfoTests.run()
+        SecurePlistProtectionTests.run()
         await publicDummyReportsUnavailableWithoutNetwork()
         await transportAvailabilityMatchesBuildMode()
         capabilityGateBlocksMissingTransporterFeature()

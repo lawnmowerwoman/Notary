@@ -36,6 +36,7 @@ package struct CheckSpec : @unchecked Sendable {
     package let section: String
     package let key: String
     package let benchmarkID: String?
+    package let executionPolicy: CheckExecutionPolicy
 
     /// Optional override for cases where "mode" isn't a PentaMode key in schema (e.g. ForceTimeServer Bool).
     let modeOverride: (([String: Any], ManagedConfig) -> PentaMode)?
@@ -51,6 +52,7 @@ package struct CheckSpec : @unchecked Sendable {
         section: String,
         key: String,
         benchmarkID: String? = nil,
+        executionPolicy: CheckExecutionPolicy = CheckExecutionPolicy(),
         modeOverride: (([String: Any], ManagedConfig) -> PentaMode)? = nil,
         timeoutSeconds: TimeInterval = 16, // ✅ Default
         check: @escaping (HardenLogger, ManagedConfig) -> CheckResult,
@@ -60,6 +62,7 @@ package struct CheckSpec : @unchecked Sendable {
         self.section = section
         self.key = key
         self.benchmarkID = benchmarkID
+        self.executionPolicy = executionPolicy
         self.modeOverride = modeOverride
         self.timeoutSeconds = timeoutSeconds
         self.check = check

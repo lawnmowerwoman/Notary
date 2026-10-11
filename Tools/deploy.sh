@@ -9,9 +9,10 @@
 #      always       -> "Notary Last Contact" for stale-report Smart Groups
 #      --report%    -> optional INTEGER EA "Notary Percent"
 #      --create-connect -> optional STRING EA "Notary Connection"
+#      --activation=CODE -> persist the local Licensing Service Activation Code
 # ==============================================================================
 
-VERSION="2.1.4"
+VERSION="2.1.5"
 echo "Deploy Notary – v${VERSION}"
 
 emulate -L zsh
@@ -19,6 +20,13 @@ set -o errexit -o pipefail -o nounset
 IFS=$'\n\t'
 
 log() { print -r -- "[$(date +%F' '%T)] $*"; }
+
+validate_activation_code() {
+  if [[ -z "$1" || ${#1} -gt 128 || ! "$1" =~ '^[A-Za-z0-9][A-Za-z0-9-]*$' ]]; then
+    log "ERROR: --activation requires a non-empty code (letters, digits and hyphens; maximum 128 characters)"
+    return 6
+  fi
+}
 
 plist_read_key() {
   local plist_path="$1"
@@ -37,6 +45,7 @@ plist_write_state() {
   local api_update="$4"
   local report_percent="$5"
   local ignore_local="$6"
+  local activation_code="${7:-}"
   local plist_dir lock_dir tmp_path attempts=0
   local retry_round=1 max_rounds=3 max_attempts=100 stale_after=30 lock_mtime=0 now=0
 
@@ -118,6 +127,10 @@ plist_write_state() {
     /usr/libexec/PlistBuddy -c "Delete :reportpercent" "${tmp_path}" >/dev/null 2>&1 || true
     /usr/libexec/PlistBuddy -c "Add :reportpercent bool ${report_percent:l}" "${tmp_path}"
 
+    if [[ -n "${activation_code}" ]]; then
+      /usr/bin/plutil -replace activationCode -string "${activation_code}" "${tmp_path}"
+    fi
+
     # Write permissions before the final move so the on-disk plist remains root-only.
     chmod 600 "${tmp_path}" || true
     chown root:wheel "${tmp_path}" || true
@@ -182,6 +195,7 @@ CREATE_CONNECT=false
 INTERVAL="3600"
 DAILY_TIME=""
 IGNORE_LOCAL=false
+ACTIVATION_CODE=""
 
 for arg in "$@"; do
   case "$arg" in
@@ -194,6 +208,14 @@ for arg in "$@"; do
     --interval=*|-i=*)  INTERVAL="${arg#*=}" ;;
     --daily=*)          DAILY_TIME="${arg#*=}" ;;
     --ignorelocal|--ignore-local) IGNORE_LOCAL=true ;;
+    --activation=*)
+      ACTIVATION_CODE="${arg#*=}"
+      validate_activation_code "${ACTIVATION_CODE}" || exit 6
+      ;;
+    --activation)
+      log "ERROR: use --activation=CODE"
+      exit 6
+      ;;
     *) ;;
   esac
 done
@@ -271,11 +293,14 @@ fi
 # These keys must match RunnerState / ManagedConfig loading.
 # (No backward compatibility needed, per your note.)
 if (( haveCreds == 1 )); then
-  plist_write_state "${STORAGE}" "${CLIENT_ID}" "${CLIENT_SECRET}" "${UPDATE}" "${REPORT_PERCENT}" "${IGNORE_LOCAL}"
+  plist_write_state "${STORAGE}" "${CLIENT_ID}" "${CLIENT_SECRET}" "${UPDATE}" "${REPORT_PERCENT}" "${IGNORE_LOCAL}" "${ACTIVATION_CODE}"
 else
-  plist_write_state "${STORAGE}" "" "" "${UPDATE}" "${REPORT_PERCENT}" "${IGNORE_LOCAL}"
+  plist_write_state "${STORAGE}" "" "" "${UPDATE}" "${REPORT_PERCENT}" "${IGNORE_LOCAL}" "${ACTIVATION_CODE}"
 fi
 log "Wrote state to ${STORAGE} (apiupdate=${UPDATE}, reportpercent=${REPORT_PERCENT})"
+if [[ -n "${ACTIVATION_CODE}" ]]; then
+  log "Activation Code configured in ${STORAGE}"
+fi
 
 # --- HTTP helpers (for EA creation) -------------------------------------------
 CURL_STATUS=""; CURL_BODY=""; CURL_ERROR="0"

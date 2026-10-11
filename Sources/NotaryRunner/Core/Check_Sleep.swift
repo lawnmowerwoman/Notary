@@ -3,7 +3,12 @@ import Foundation
 // MARK: 5.10 Ensure system is set to hibernate
 
 func checkHibernateMode() -> CheckResult {
-    if HardwareInfo.isDesktopMac() {
+    let formFactor = HardwareInfo.formFactor()
+    if formFactor == .unknown {
+        return .init(name: "Force Hibernate on Sleep", status: .unknown,
+                     details: "Could not determine notebook/desktop hardware type.")
+    }
+    if formFactor == .desktop {
         return .init(
             name: "Force Hibernate on Sleep",
             status: .skipped,
@@ -56,7 +61,12 @@ func checkHibernateMode() -> CheckResult {
 
 func enforceHibernateMode(logger: HardenLogger) -> CheckResult {
 
-    if HardwareInfo.isDesktopMac() {
+    let formFactor = HardwareInfo.formFactor()
+    if formFactor == .unknown {
+        return .init(name: "Force Hibernate on Sleep", status: .unknown,
+                     details: "Could not determine notebook/desktop hardware type; no power settings changed.")
+    }
+    if formFactor == .desktop {
         return .init(
             name: "Force Hibernate on Sleep",
             status: .skipped,

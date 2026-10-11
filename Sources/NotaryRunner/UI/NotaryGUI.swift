@@ -8,6 +8,8 @@ import NotaryAboutUI
 import NotaryReporterImplementation
 
 @MainActor
+// Legacy UI: Reporter/Configurator feature-frozen since 2026-10-11.
+// New development belongs to Ministry/Notary Admin; removal requires a tested replacement.
 enum NotaryGUI {
     static let appName = "Notary"
     private static var retainedReportDelegate: NotaryReportWindowDelegate?

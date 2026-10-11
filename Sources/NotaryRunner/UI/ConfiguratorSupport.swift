@@ -1,3 +1,5 @@
+// Deprecated working copy: feature-frozen since 2026-10-11.
+// New Configurator features belong to Ministry/Notary Admin; security/compatibility fixes remain allowed.
 import Foundation
 
 final class ConfigNode: NSObject {

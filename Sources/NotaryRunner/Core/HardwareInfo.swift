@@ -3,6 +3,12 @@ import IOKit
 
 package enum HardwareInfo {
 
+    package enum FormFactor: Equatable {
+        case notebook
+        case desktop
+        case unknown
+    }
+
     package static func serialNumber() -> String? {
         guard let r = try? Shell.run(
             "/usr/sbin/ioreg",
@@ -53,12 +59,35 @@ package enum HardwareInfo {
     }
 
     package static func isMobileMac() -> Bool {
-        guard let model = hwModel() else { return false }
-        return model.hasPrefix("MacBook")
+        formFactor() == .notebook
     }
 
     package static func isDesktopMac() -> Bool {
-        return !isMobileMac()
+        formFactor() == .desktop
+    }
+
+    package static func formFactor() -> FormFactor {
+        let service = IOServiceGetMatchingService(kIOMainPortDefault, IOServiceMatching("IOPMrootDomain"))
+        guard service != 0 else {
+            return classifyFormFactor(model: hwModel(), hasBuiltInLid: nil)
+        }
+        defer { IOObjectRelease(service) }
+        var properties: Unmanaged<CFMutableDictionary>?
+        guard IORegistryEntryCreateCFProperties(service, &properties, kCFAllocatorDefault, 0) == KERN_SUCCESS,
+              let values = properties?.takeRetainedValue() as? [String: Any] else {
+            return classifyFormFactor(model: hwModel(), hasBuiltInLid: nil)
+        }
+        // Presence identifies the built-in lid; its value only says open/closed.
+        return classifyFormFactor(model: hwModel(), hasBuiltInLid: values["AppleClamshellState"] != nil)
+    }
+
+    package static func classifyFormFactor(model: String?, hasBuiltInLid: Bool?) -> FormFactor {
+        if hasBuiltInLid == true || model?.hasPrefix("MacBook") == true { return .notebook }
+        if hasBuiltInLid == false { return .desktop }
+        if let model, ["iMac", "Macmini", "MacPro", "MacStudio", "Xserve"].contains(where: { model.hasPrefix($0) }) {
+            return .desktop
+        }
+        return .unknown
     }
 
     package static func isAppleSilicon() -> Bool {
