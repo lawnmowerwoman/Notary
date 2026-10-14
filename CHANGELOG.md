@@ -2,6 +2,15 @@
 
 Alle wesentlichen Änderungen an Notary sollen hier in knapper Form dokumentiert werden.
 
+## 2.2 - 1C45 (2026-10-14)
+
+- Stabiles Release ohne Kanalbuchstaben: vollständige interne Report-, Configurator- und Transport-Implementierungen, signiert, notarisiert und mit eingebettetem Apple-Ticket. Öffentliche Quellen behalten die Dummy-Integrationen.
+- Activation-Code-basiertes Licensing mit lokal geprüftem App-Token-Cache und Offline-Fallback; Aktivierungscode per Profil oder `Tools/deploy.sh --activation=NOTX...`. Direkte Token-Verteilung bleibt als Übergangsweg unterstützt.
+- Drei-Minuten-Verläufe für Netzwerk und CPU im Menubar-Element, reguläre XProtect-Auswertung ab macOS 27.2 und korrigierte moderne MacBook-Erkennung.
+- Class-C-State-Zugriff und getrennte Read-/Decode-Diagnostik aus 1C44k übernommen. Seit dessen Rollout laut Betreiber keine erneuten Cocoa-257-Fehler auf Testgeräten/Build Agents; Security-Agent-Timeouts bleiben mit unverändertem einstündigem Fallback als eigener Punkt offen.
+- Eigenständiger Reporter, Configurator und Token Escrow/Broker auf 2.3 verschoben; bestehende Funktionen bleiben in 2.2 erhalten. Neue Check-Intervalle bleiben Metadaten, keine geänderte Laufzeitsteuerung.
+- [Vollständige Release Notes](Dokumentation/Release-Notes-2.2.md). SHA-256: `6205397c4faba4e93d307f56ea4ce2435897401d76998370dd79fa0b533a6c5b`.
+
 ## Unreleased
 
 - Öffentliche Beta `2.2 (1C44k)` im k-Channel: vollständiger Confidential Build mit State-Datei-Schutzklassen-Migration als Cocoa-257-Kandidat, moderner MacBook-Erkennung, Activation-Code-Deployment und Intervall-Metadaten. Signiert, notarisiert und gestapled; Regressionstests und isolierte Licensing-Integration bestanden. Display-Off-/Sleep-/Wake-Feldtest bleibt erforderlich. SHA-256: `afaa89a532e554af10dedd08adb640ecb9c10bf0a524bbc1ec9d6e2ed377757e`.

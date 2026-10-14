@@ -5,9 +5,9 @@ package enum NotaryVersion {
   package static let majorIndex: Int = 1         // 0=v1, 1=v2, ...
   package static let minorLetter: String = "C"  // A=.0, B=.1, ...
   package static let patch: Int = 0                    // rapid-fix patch version
-  package static let build: Int = 44                    // local counter
-  package static let channel: String = "k"           // m..a or "" for release
+  package static let build: Int = 45                    // local counter
+  package static let channel: String = ""           // m..a or "" for release
 
   package static let marketingVersion: String = "2.2" // e.g. 2.0
-  package static let label: String = "1C44k"                          // e.g. 1A42m
+  package static let label: String = "1C45"                          // e.g. 1A42m
 }

@@ -4,6 +4,20 @@
 
 Notary ist ein macOS-Compliance- und Hardening-Projekt mit Fokus auf lokale Prüfungen, strukturierte Findings und eine klare Trennung zwischen öffentlichem Kern und optionalen vertraulichen Integrationen. Die aktuelle Implementierung ist ein Swift-basierter Runner mit Menüleisten-Begleiter, lokaler Report-App und einer stabilen Transport-Schnittstelle.
 
+## Release 2.2
+
+Version 2.2 ergänzt Activation-Code-basiertes Licensing mit lokal validiertem
+Offline-Token-Cache, Drei-Minuten-Verläufe für Netzwerk und CPU im Menüleisten-
+Element, reguläre XProtect-Prüfung ab macOS 27.2 und die Härtung des Hintergrund-
+State-Zugriffs. [Release Notes](Dokumentation/Release-Notes-2.2.md).
+
+Die eigenständige Reporter-/Configurator-App und der Token Escrow Service sind
+für 2.3 vorgesehen. Die bestehenden Funktionen bleiben in 2.2 verfügbar.
+Direkte App-Token-Verteilung bleibt als Übergangsweg unterstützt; ihr Wegfall
+ist nicht Teil dieses Releases. Öffentliche Quellcodes enthalten weiterhin die
+Dummy-Integrationen, das veröffentlichte Installer-Paket die vollständigen
+internen Implementierungen.
+
 ## Aktueller Ist-Zustand
 
 Heute sind diese Kernelemente real vorhanden:

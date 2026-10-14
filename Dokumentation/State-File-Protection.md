@@ -45,3 +45,13 @@ Kein Mac wird für Notary künstlich wach gehalten.
 Der installierte 1C42m-Build und die produktive Plist werden durch reine
 Quellcode-/Teständerungen nicht migriert. Die Migration erfolgt erst mit dem
 neuen Runner bei dessen nächstem Zyklus.
+
+## Feldbeobachtung bis 2026-10-14
+
+Seit dem Rollout von 1C44k meldet der Betreiber keine erneuten Cocoa-257-Fehler
+auf den Testgeräten und Apfelwerk Build Agents. Erfolgreiche Zyklen und Licensing
+Check-ins wurden auch nach Display-Off beobachtet. Das stützt die Anpassung,
+beweist aber weder eine bestimmte macOS-Ursache noch Ausführung während echtem
+Systemschlaf. Version 2.2 übernimmt dieselbe Implementierung unverändert.
+Die separat beobachteten Security-Agent-Timeouts sind nicht als State-Lesefehler
+zu interpretieren und bleiben ein eigener Untersuchungsgegenstand.
